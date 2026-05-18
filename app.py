@@ -24,7 +24,7 @@ GROUP_CHATS = {
     "Code-Talk": {"is_private": False, "allowed_members": [], "history": []}
 }
 
-# Private Direct Messages Registry (Keys generated dynamically as "user1:user2")
+# Private Direct Messages Registry (Keys generated dynamically as "user1-user2")
 PRIVATE_DMS = {}
 
 # --- CORE USER WEB INTERFACES ---

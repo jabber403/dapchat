@@ -43,7 +43,7 @@
         .item-btn {
             padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.03);
             color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; transition: all 0.2s;
-            font-size: 0.9rem; truncate: overflow; text-overflow: ellipsis; white-space: nowrap;
+            font-size: 0.9rem; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
         }
         .item-btn:hover, .item-btn.active { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); font-weight: 600; }
         
@@ -160,11 +160,15 @@
     </div>
 
     <script>
-        const socket = io();
-        const clientUser = "{{ username }}";
+        // iOS/iPadOS STABILITY FIX: Added explicit transport fallbacks for network drops
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            upgrade: true
+        });
         
-        let activeChatMode = "group"; // Options: "group" or "dm"
-        let activeTarget = "General"; // Can hold a group room name or target DM username
+        const clientUser = "{{ username }}";
+        let activeChatMode = "group"; 
+        let activeTarget = "General"; 
         
         const msgContainer = document.getElementById('msg-container');
         const inputField = document.getElementById('chat-input-field');
@@ -175,7 +179,6 @@
             socket.emit('join_room', { room: activeTarget });
         });
 
-        // Switching to a Public or Private Group Channel
         function switchGroup(roomName) {
             activeChatMode = "group";
             activeTarget = roomName;
@@ -186,7 +189,6 @@
             socket.emit('join_room', { room: roomName });
         }
 
-        // Switching to an Isolated Private DM Session
         function switchDM(targetUser) {
             activeChatMode = "dm";
             activeTarget = targetUser;
@@ -208,7 +210,6 @@
             });
         }
 
-        // Standardized message element rendering logic
         function displayMessage(sender, text) {
             const wrap = document.createElement('div');
             wrap.classList.add('msg-wrap', sender === clientUser ? 'me' : 'other');
@@ -227,7 +228,6 @@
             msgContainer.scrollTop = msgContainer.scrollHeight;
         }
 
-        // Event listeners receiving messages from WebSocket pipes
         socket.on('sync_history', (history) => {
             history.forEach(packet => displayMessage(packet.sender, packet.text));
         });
@@ -254,14 +254,15 @@
 
         // Processing active event message dispatching
         function sendMessage() {
-            const cleanText = inputField.value.strip ? inputField.value.strip() : inputField.value.trim();
+            // iOS COMPATIBILITY FIX: Switched completely to standard trim expressions
+            const cleanText = inputField.value.trim();
             if (!cleanText) return;
 
             if (activeChatMode === "group") {
                 socket.emit('send_group_msg', { room: activeTarget, text: cleanText });
             } else {
                 socket.emit('send_private_dm', { target: activeTarget, text: cleanText });
-                displayMessage(clientUser, cleanText); // Instantly update view locally for fluid UI performance
+                displayMessage(clientUser, cleanText); 
             }
             inputField.value = '';
         }
@@ -269,7 +270,6 @@
         dispatchBtn.addEventListener('click', sendMessage);
         inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-        // Automated Bot Creation Form Script Triggering
         function mintBot() {
             const inputElement = document.getElementById('bot-name-input');
             const targetBotName = inputElement.value.trim();
