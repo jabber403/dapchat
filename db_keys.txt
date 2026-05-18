@@ -1,0 +1,1 @@
+{"api_key": "aero_local_82ed226fe14d0fbcf4735a92", "developer": "Jabberr", "app_name": "CHATDADDY"}

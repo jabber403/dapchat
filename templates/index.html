@@ -3,67 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aero Platform - Custom Storage Engine</title>
+    <title>Aero Snap - Standalone Platform</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden; }
-        .platform-container { width: 1100px; height: 710px; display: flex; background: rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); overflow: hidden; }
-        .sidebar { width: 280px; background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto; }
+        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #111, #223, #111); overflow: hidden; }
+        .platform-container { width: 1100px; height: 780px; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.05); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); overflow: hidden; }
+        
+        /* Snapchat Horizontal Stories Shelf Bar */
+        .stories-container { height: 110px; display: flex; align-items: center; padding: 0 20px; gap: 15px; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.05); overflow-x: auto; }
+        .story-node { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fffc00; padding: 2px; cursor: pointer; flex-shrink: 0; text-align: center; position: relative; }
+        .story-node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .story-label { font-size: 10px; color: white; margin-top: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 70px; }
+        .add-story-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        
+        .main-workspace { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 280px; background: rgba(0,0,0,0.3); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto; }
         .sidebar-section { display: flex; flex-direction: column; gap: 8px; }
-        .sidebar h3 { color: rgba(255,255,255,0.6); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-        .item-btn { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
-        .item-btn:hover, .item-btn.active { background: rgba(255,255,255,0.15); font-weight: 600; }
+        .sidebar h3 { color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+        .item-btn { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.02); color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+        .item-btn:hover, .item-btn.active { background: #fffc00; color: black; font-weight: 600; }
         .creation-form { display: flex; gap: 6px; }
         .creation-form input { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; outline: none; }
         .creation-form button { padding: 6px 10px; background: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
         .chat-engine { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { padding: 15px 25px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05); color: white; font-weight: 600; }
+        .chat-header { padding: 15px 25px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); color: white; font-weight: 600; }
         .messages-area { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg-wrap { display: flex; flex-direction: column; max-width: 65%; color: white; }
+        
+        /* Message Bubbles layout featuring Image containers */
+        .msg-wrap { display: flex; flex-direction: column; max-width: 50%; color: white; }
         .msg-wrap.me { align-self: flex-end; }
         .msg-wrap.other { align-self: flex-start; }
-        .msg-author { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
-        .msg-bubble { padding: 11px 15px; border-radius: 16px; background: rgba(255, 255, 255, 0.15); font-size: 0.95rem; }
+        .msg-author { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
+        .msg-bubble { padding: 11px 15px; border-radius: 16px; background: rgba(255, 255, 255, 0.1); font-size: 0.95rem; word-wrap: break-word; }
         .msg-wrap.me .msg-bubble { background: #007aff; }
-        .input-bar { padding: 20px; display: flex; gap: 12px; background: rgba(0,0,0,0.15); }
-        .input-bar input { flex: 1; padding: 14px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: white; outline: none; }
-        .input-bar button { padding: 0 24px; border-radius: 25px; border: none; background: white; font-weight: bold; cursor: pointer; }
-        .user-tag { margin-top: auto; color: #a1c4fd; font-size: 0.85rem; }
+        .msg-img { width: 100%; max-width: 240px; border-radius: 12px; margin-top: 5px; display: block; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
+        
+        .input-bar { padding: 20px; display: flex; gap: 12px; background: rgba(0,0,0,0.3); align-items: center; }
+        .input-bar input[type="text"] { flex: 1; padding: 14px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white; outline: none; }
+        .media-btn-label { width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; font-size: 1.2rem; }
+        .input-bar button { padding: 14px 24px; border-radius: 25px; border: none; background: #fffc00; color: black; font-weight: bold; cursor: pointer; }
+        .user-tag { margin-top: auto; color: #fffc00; font-size: 0.85rem; }
+        
+        /* Modal Overlay For Viewing Stories Fullscreen */
+        .story-overlay { display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        .story-overlay img { max-height: 80vh; max-width: 90vw; border-radius: 16px; box-shadow: 0 0 30px rgba(255,255,255,0.1); }
+        .story-overlay h2 { color: white; margin-bottom: 15px; font-weight: 400; }
     </style>
 </head>
 <body>
+
+    <div class="story-overlay" id="story-viewer" onclick="this.style.display='none'">
+        <h2 id="story-viewer-author">@User</h2>
+        <img id="story-viewer-img" src="" alt="Snap Story">
+        <p style="color:gray; margin-top:10px;">Click anywhere to dismiss</p>
+    </div>
+
     <div class="platform-container">
-        <div class="sidebar">
-            <div class="sidebar-section">
-                <h3>Channels</h3>
-                {% for room_name, r_data in rooms.items() if not r_data.is_private %}
-                    <button class="item-btn {% if room_name == 'General' %}active{% endif %}" onclick="switchGroup('{{ room_name }}')"># {{ room_name }}</button>
-                {% endfor %}
-            </div>
-            <div class="sidebar-section">
-                <h3>Direct Messages</h3>
-                {% for user in users_list %}
-                    <button class="item-btn" onclick="switchDM('{{ user }}')">💬 {{ user }}</button>
-                {% endfor %}
-            </div>
-            <div class="sidebar-section">
-                <h3>Custom API Profiles</h3>
-                {% for key in developer_keys %}
-                    <div class="item-btn" style="cursor:pointer; font-size:11px; opacity:0.8; font-family:monospace;" onclick="alert('Key Details: {{key}}')">🔑 Click to View Key</div>
-                {% endfor %}
-                <div class="creation-form">
-                    <input type="text" id="app-name-input" placeholder="App Identity Name" autocomplete="off">
-                    <button onclick="mintDeveloperKey()">Mint</button>
+        <div class="stories-container">
+            <label class="add-story-btn">
+                +
+                <input type="file" id="story-file-picker" accept="image/*" style="display:none;" onchange="postSnapStory(this)">
+            </label>
+            {% for story in stories %}
+                <div class="story-container-node" onclick="viewStory('{{ story.username }}', '{{ story.image }}')">
+                    <div class="story-node">
+                        <img src="{{ story.image }}">
+                    </div>
+                    <div class="story-label">@{{ story.username }}</div>
                 </div>
-            </div>
-            <div class="user-tag">@{{ username }}<br><br><a href="/logout" style="color:#ff6b6b; text-decoration:none;">[Disconnect]</a></div>
+            {% endfor %}
         </div>
-        <div class="chat-engine">
-            <div class="chat-header" id="current-chat-title">Group: # General</div>
-            <div class="messages-area" id="msg-container"></div>
-            <div class="input-bar">
-                <input type="text" id="chat-input-field" placeholder="Type message..." autocomplete="off">
-                <button id="dispatch-btn" onclick="sendMessage()">Send</button>
+
+        <div class="main-workspace">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Channels</h3>
+                    {% for room_name, r_data in rooms.items() %}
+                        <button class="item-btn {% if room_name == 'General' %}active{% endif %}" onclick="switchGroup('{{ room_name }}')"># {{ room_name }}</button>
+                    {% endfor %}
+                </div>
+                <div class="sidebar-section">
+                    <h3>Direct Messages</h3>
+                    {% for user in users_list %}
+                        <button class="item-btn" onclick="switchDM('{{ user }}')">💬 {{ user }}</button>
+                    {% endfor %}
+                </div>
+                <div class="sidebar-section">
+                    <h3>Aero Custom Mint</h3>
+                    {% for key in developer_keys %}
+                        <div class="item-btn" style="cursor:pointer; font-size:11px; opacity:0.8; font-family:monospace;" onclick="alert('Key Details:\n\n{{key}}')">🔑 View Active Key</div>
+                    {% endfor %}
+                    <div class="creation-form">
+                        <input type="text" id="app-name-input" placeholder="Application Profile Name" autocomplete="off">
+                        <button onclick="mintDeveloperKey()">Mint</button>
+                    </div>
+                </div>
+                <div class="user-tag">@{{ username }}<br><br><a href="/logout" style="color:#ff6b6b; text-decoration:none;">[Disconnect]</a></div>
+            </div>
+            <div class="chat-engine">
+                <div class="chat-header" id="current-chat-title">Group: # General</div>
+                <div class="messages-area" id="msg-container"></div>
+                <div class="input-bar">
+                    <label class="media-btn-label">
+                        📷
+                        <input type="file" id="chat-file-picker" accept="image/*" style="display:none;">
+                    </label>
+                    <input type="text" id="chat-input-field" placeholder="Type data stream..." autocomplete="off">
+                    <button id="dispatch-btn" onclick="sendMessage()">Send</button>
+                </div>
             </div>
         </div>
     </div>
@@ -75,6 +123,7 @@
         const msgContainer = document.getElementById('msg-container');
         const inputField = document.getElementById('chat-input-field');
         const chatTitle = document.getElementById('current-chat-title');
+        const chatFilePicker = document.getElementById('chat-file-picker');
 
         function switchGroup(name) { activeChatMode = "group"; activeTarget = name; chatTitle.innerText = "Group: # " + name; fetchMessages(); updateUI(); }
         function switchDM(name) { activeChatMode = "dm"; activeTarget = name; chatTitle.innerText = "DM: @" + name; fetchMessages(); updateUI(); }
@@ -91,7 +140,11 @@
             list.forEach(m => {
                 const w = document.createElement('div');
                 w.classList.add('msg-wrap', m.sender === clientUser ? 'me' : 'other');
-                w.innerHTML = `<div class="msg-author">@${m.sender}</div><div class="msg-bubble">${m.text}</div>`;
+                
+                let textBlock = m.text ? `<div class="msg-bubble">${m.text}</div>` : '';
+                let imgBlock = m.image ? `<img class="msg-img" src="${m.image}" onclick="window.open(this.src)">` : '';
+                
+                w.innerHTML = `<div class="msg-author">@${m.sender}</div>${textBlock}${imgBlock}`;
                 msgContainer.appendChild(w);
             });
             msgContainer.scrollTop = msgContainer.scrollHeight;
@@ -104,12 +157,50 @@
 
         function sendMessage() {
             const txt = inputField.value.trim();
-            if(!txt) return;
+            const file = chatFilePicker.files[0];
             let url = activeChatMode === "group" ? '/api/send_message' : '/api/send_dm';
-            let body = activeChatMode === "group" ? { room: activeTarget, text: txt } : { target: activeTarget, text: txt };
+            let payload = activeChatMode === "group" ? { room: activeTarget, text: txt, image: "" } : { target: activeTarget, text: txt, image: "" };
             
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    payload.image = reader.result; // Attach Base64 image payload string
+                    executeSendRequest(url, payload);
+                }
+                reader.readAsDataURL(file);
+            } else {
+                if(!txt) return;
+                executeSendRequest(url, payload);
+            }
+        }
+
+        function executeSendRequest(url, body) {
             fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-            .then(() => { inputField.value = ''; fetchMessages(); });
+            .then(() => { 
+                inputField.value = ''; 
+                chatFilePicker.value = ''; // Reset file input tracker
+                fetchMessages(); 
+            });
+        }
+
+        function postSnapStory(inputElement) {
+            const file = inputElement.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                fetch('/api/upload_story', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: reader.result })
+                }).then(() => { alert("Story Posted!"); window.location.reload(); });
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function viewStory(author, base64Image) {
+            document.getElementById('story-viewer-author').innerText = "@" + author + "'s Story";
+            document.getElementById('story-viewer-img').src = base64Image;
+            document.getElementById('story-viewer').style.display = "flex";
         }
 
         function mintDeveloperKey() {
@@ -118,12 +209,12 @@
             const f = new FormData(); f.append('app_name', name);
             fetch('/developer/keygen', { method: 'POST', body: f }).then(r => r.json()).then(d => {
                 if(d.error) alert(d.error);
-                else { alert(`Aero Key Minted for App: ${d.app_name}\nKey: ${d.api_key}`); window.location.reload(); }
+                else { alert(`Local Key Generated:\n${d.api_key}`); window.location.reload(); }
             });
         }
 
         inputField.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
-        setInterval(fetchMessages, 2500); 
+        setInterval(fetchMessages, 2000); 
         fetchMessages();
     </script>
 </body>
