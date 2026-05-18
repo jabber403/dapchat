@@ -4,13 +4,15 @@ from flask_socketio import SocketIO, emit, join_room
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'pure_python_glass_key_999'
+
+# SECURITY PRODUCION FIX: Pulls the key safely from Render's Environment Variables
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'local_development_fallback_key_123')
 
 # Using standard WebSockets without heavy database extension requirements
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- IN-MEMORY DATABASE (Pure Python) ---
-# No external installations required. Safe for Python 3.14.
+# Safe for all Python versions, including experimental environments
 USERS = {}          # Format: { "username": "password" }
 STORIES = []        # Format: [ {"username": "...", "content": "...", "time": "..."} ]
 CHAT_HISTORY = {    # Stores persistent messages per room
