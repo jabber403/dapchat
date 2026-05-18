@@ -5,54 +5,102 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'aero_snapchat_clone_secret_2026'
+# Secure secret key assignment for production serverless infrastructure
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dapchat_enterprise_crypto_key_2026')
 
-# --- SNAPCHAT ENGINE FLAT-FILE DATABASE CONFIG ---
+# -------------------------------------------------------------------------
+# ADVANCED SERVERLESS MEMORY STORAGE ENGINE & SCHEMAS
+# -------------------------------------------------------------------------
+# Because Vercel destroys local storage text files on sleep, we use an
+# optimized global memory dictionary with lookup indexes for instant routing.
+MEMORY_USERS = {
+    "dapadmin": "admin123",
+    "snapking": "snap123",
+    "cyberghost": "ghost123"
+}
+
+MEMORY_CHATS = [
+    {
+        "room": "General",
+        "text": "Welcome to the official launch of DapChat! 🚀",
+        "image": "",
+        "sender": "[Bot] System",
+        "timestamp": "12:00 PM"
+    },
+    {
+        "room": "Code-Talk",
+        "text": "Flask engine optimized for Vercel Serverless Functions.",
+        "image": "",
+        "sender": "[Bot] Developer",
+        "timestamp": "12:05 PM"
+    }
+]
+
+MEMORY_DMS = []
+MEMORY_STORIES = [
+    {
+        "username": "snapking",
+        "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%23fffc00'/><text x='50%' y='55%' font-family='sans-serif' font-size='14' font-weight='bold' fill='black' text-anchor='middle'>LIVE NOW</text></svg>",
+        "timestamp": "01:00 PM"
+    }
+]
+
+# PERSISTENT STORAGE CAPABILITY FALLBACK FOR LOCAL MACHINES
 DB_USERS = "db_users.txt"
-DB_KEYS = "db_keys.txt"
-DB_CHATS = "db_chats.txt"
-DB_DMS = "db_dms.txt"
-DB_STORIES = "db_stories.txt"  # New Stories Database Table
 
-def init_db():
-    """ Installs the text-based database structure """
-    for db_file in [DB_USERS, DB_KEYS, DB_CHATS, DB_DMS, DB_STORIES]:
-        if not os.path.exists(db_file):
-            with open(db_file, "w") as f:
-                f.write("")
+def seed_database_from_local_disk():
+    """ Scans local environments for existing user schemas to preserve state """
+    global MEMORY_USERS
+    try:
+        if os.path.exists(DB_USERS):
+            with open(DB_USERS, "r") as storage_file:
+                for active_line in storage_file:
+                    if active_line.strip():
+                        parsed_record = json.loads(active_line.strip())
+                        MEMORY_USERS[parsed_record['username']] = parsed_record['password']
+    except Exception as cache_error:
+        print(f"[Engine Warn] Disk synchronization bypassed: {cache_error}")
 
-init_db()
+# Run sync check on startup
+seed_database_from_local_disk()
 
-def read_rows(file_path):
-    rows = []
-    with open(file_path, "r") as f:
-        for line in f:
-            if line.strip():
-                rows.append(json.loads(line.strip()))
-    return rows
+# -------------------------------------------------------------------------
+# MEMORY MONITORING & PURGE GARBAGE COLLECTION
+# -------------------------------------------------------------------------
+def optimize_memory_buffers():
+    """ 
+    Prevents serverless instance memory bloat from active Base64 image streams.
+    Caps public channels and direct messaging histories at a strict length threshold.
+    """
+    global MEMORY_CHATS, MEMORY_DMS, MEMORY_STORIES
+    MAX_BUFFER_CAPACITY = 100
+    
+    if len(MEMORY_CHATS) > MAX_BUFFER_CAPACITY:
+        MEMORY_CHATS = MEMORY_CHATS[-MAX_BUFFER_CAPACITY:]
+    if len(MEMORY_DMS) > MAX_BUFFER_CAPACITY:
+        MEMORY_DMS = MEMORY_DMS[-MAX_BUFFER_CAPACITY:]
+    if len(MEMORY_STORIES) > 20:
+        MEMORY_STORIES = MEMORY_STORIES[-20:]
 
-def append_row(file_path, data):
-    with open(file_path, "a") as f:
-        f.write(json.dumps(data) + "\n")
-
-# --- CORE WEB INTERFACES ---
+# -------------------------------------------------------------------------
+# CORE APPLICATION ROUTING & CORE PAGES
+# -------------------------------------------------------------------------
 
 @app.route('/')
 def index():
+    """ Renders the primary workspace dashboard panel """
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    current_user = session['username']
-    all_users = [row['username'] for row in read_rows(DB_USERS)]
-    available_users = [u for u in all_users if u != current_user and not u.startswith('[Bot]')]
+    current_identity = session['username']
     
-    all_keys = read_rows(DB_KEYS)
-    user_keys = [row['api_key'] for row in all_keys if row['developer'] == current_user]
+    # Filter out system entities and the requesting user from the direct message sidebar
+    active_directory = [
+        user_handle for user_handle in MEMORY_USERS.keys() 
+        if user_handle != current_identity and not user_handle.startswith('[Bot]')
+    ]
     
-    # Read active stories from database
-    active_stories = read_rows(DB_STORIES)
-    
-    rooms = {
+    preconfigured_rooms = {
         "General": {"is_private": False},
         "Gaming": {"is_private": False},
         "Code-Talk": {"is_private": False}
@@ -60,170 +108,197 @@ def index():
     
     return render_template(
         'index.html', 
-        username=current_user, 
-        rooms=rooms,
-        users_list=available_users,
-        developer_keys=user_keys,
-        stories=active_stories[-10:]  # Show last 10 stories posted
+        username=current_identity, 
+        rooms=preconfigured_rooms,
+        users_list=active_directory,
+        stories=MEMORY_STORIES[-10:]
     )
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """ Manages user session authentication lookups """
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password')
+        user_handle = request.form.get('username', '').strip()
+        security_token = request.form.get('password', '')
         
-        for row in read_rows(DB_USERS):
-            if row['username'] == username and row['password'] == password:
-                session['username'] = username
-                return redirect(url_for('index'))
-        return "<h3>Login Failed. <a href='/login'>Try Again</a></h3>"
+        if not user_handle or not security_token:
+            return "<h3>Missing credentials. <a href='/login'>Retry</a></h3>", 400
+            
+        if user_handle in MEMORY_USERS and MEMORY_USERS[user_handle] == security_token:
+            session['username'] = user_handle
+            return redirect(url_for('index'))
+            
+        return "<h3>Invalid identity configurations. <a href='/login'>Retry</a></h3>", 401
+        
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """ Registers new credentials inside the memory matrix """
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password')
+        user_handle = request.form.get('username', '').strip()
+        security_token = request.form.get('password', '')
         
-        if not username or not password or username.startswith('[Bot]'):
-            return "<h3>Invalid Input. <a href='/signup'>Try Again</a></h3>"
+        # Rigorous input validation checks
+        if not user_handle or not security_token:
+            return "<h3>All fields are mandatory. <a href='/signup'>Back</a></h3>", 400
             
-        for row in read_rows(DB_USERS):
-            if row['username'] == username:
-                return "<h3>Username Already Taken. <a href='/signup'>Try Again</a></h3>"
-                
-        append_row(DB_USERS, {"username": username, "password": password})
-        session['username'] = username
+        if len(user_handle) < 3 or len(security_token) < 4:
+            return "<h3>Credentials fail length regulations. <a href='/signup'>Back</a></h3>", 400
+            
+        if user_handle.startswith('[Bot]') or user_handle.lower() == 'system':
+            return "<h3>Reserved handle naming pattern. <a href='/signup'>Back</a></h3>", 403
+            
+        if user_handle in MEMORY_USERS:
+            return "<h3>Identity token already allocated. <a href='/signup'>Back</a></h3>", 409
+            
+        # Commit to real-time memory map
+        MEMORY_USERS[user_handle] = security_token
+        
+        # Local system safety write fallback
+        try:
+            with open(DB_USERS, "a") as storage_append:
+                storage_append.write(json.dumps({"username": user_handle, "password": security_token}) + "\n")
+        except Exception:
+            pass
+            
+        session['username'] = user_handle
         return redirect(url_for('index'))
+        
     return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
+    """ Destroys client browser cookie sessions """
     session.pop('username', None)
     return redirect(url_for('login'))
 
-# --- SNAPCHAT STORIES ENGINE ---
-
-@app.route('/api/upload_story', methods=['POST'])
-def upload_story():
-    user = session.get('username')
-    data = request.get_json() or {}
-    image_data = data.get('image')  # Base64 string format
-    
-    if user and image_data:
-        story_record = {
-            'username': user,
-            'image': image_data,
-            'timestamp': datetime.now().strftime('%I:%M %p')
-        }
-        append_row(DB_STORIES, story_record)
-        return jsonify({"status": "success"})
-    return jsonify({"error": "failed"}), 400
-
-# --- CHAT & MEDIA TRANSMISSION API ---
+# -------------------------------------------------------------------------
+# ASYNC PUBLIC CHANNEL MEDIA API WIRES
+# -------------------------------------------------------------------------
 
 @app.route('/api/get_messages', methods=['GET'])
 def get_messages():
-    room = request.args.get('room')
-    all_chats = read_rows(DB_CHATS)
-    room_history = [msg for msg in all_chats if msg.get('room') == room]
-    return jsonify(room_history[-30:])
+    """ Queries the network message stack for a specified room location """
+    target_room = request.args.get('room')
+    if not target_room:
+        return jsonify({"error": "Missing parameter 'room'"}), 400
+        
+    isolated_history = [
+        chat_packet for chat_packet in MEMORY_CHATS 
+        if chat_packet.get('room') == target_room
+    ]
+    return jsonify(isolated_history[-35:])
 
 @app.route('/api/send_message', methods=['POST'])
 def send_message():
-    user = session.get('username')
-    data = request.get_json() or {}
-    room = data.get('room')
-    text = data.get('text', '')
-    image = data.get('image', '')  # Optional Base64 media packet
+    """ Appends an encoded public message packet into the cloud buffer """
+    active_sender = session.get('username')
+    if not active_sender:
+        return jsonify({"error": "Session unauthenticated"}), 401
+        
+    payload_data = request.get_json() or {}
+    target_room = payload_data.get('room')
+    message_text = payload_data.get('text', '')
+    media_packet = payload_data.get('image', '')
     
-    if user and room:
-        msg_record = {
-            'room': room,
-            'text': text,
-            'image': image,
-            'sender': user,
-            'timestamp': datetime.now().strftime('%I:%M %p')
-        }
-        append_row(DB_CHATS, msg_record)
-        return jsonify({"status": "success"})
-    return jsonify({"error": "malformed_packet"}), 400
+    if not target_room or (not message_text and not media_packet):
+        return jsonify({"error": "Empty or malformed transmission structural data"}), 400
+        
+    compiled_chat_node = {
+        'room': target_room,
+        'text': message_text,
+        'image': media_packet,
+        'sender': active_sender,
+        'timestamp': datetime.now().strftime('%I:%M %p')
+    }
+    
+    MEMORY_CHATS.append(compiled_chat_node)
+    optimize_memory_buffers()
+    return jsonify({"status": "success", "scope": "channel"})
+
+# -------------------------------------------------------------------------
+# ASYNC DIRECT MESSAGING & STORIES ENGINE CORNERSTONES
+# -------------------------------------------------------------------------
 
 @app.route('/api/get_dms', methods=['GET'])
 def get_dms():
-    me = session.get('username')
-    target = request.args.get('target')
-    if not me or not target: return jsonify([])
+    """ Fetches secure private communication channels for matching users """
+    authenticated_identity = session.get('username')
+    target_recipient = request.args.get('target')
     
-    dm_id = "-".join(sorted([me, target]))
-    all_dms = read_rows(DB_DMS)
-    dm_history = [msg for msg in all_dms if msg.get('dm_id') == dm_id]
-    return jsonify(dm_history[-30:])
+    if not authenticated_identity or not target_recipient:
+        return jsonify({"error": "Invalid channel parameters query context"}), 400
+        
+    # Generate bi-directional channel string hash sorting keys alphabetical
+    shared_dm_hash_key = "-".join(sorted([authenticated_identity, target_recipient]))
+    
+    isolated_dm_history = [
+        dm_packet for dm_packet in MEMORY_DMS 
+        if dm_packet.get('dm_id') == shared_dm_hash_key
+    ]
+    return jsonify(isolated_dm_history[-35:])
 
 @app.route('/api/send_dm', methods=['POST'])
 def send_dm():
-    me = session.get('username')
-    data = request.get_json() or {}
-    target = data.get('target')
-    text = data.get('text', '')
-    image = data.get('image', '')
+    """ Locks a private communication log node into memory """
+    authenticated_identity = session.get('username')
+    if not authenticated_identity:
+        return jsonify({"error": "Session unauthenticated"}), 401
+        
+    payload_data = request.get_json() or {}
+    target_recipient = payload_data.get('target')
+    message_text = payload_data.get('text', '')
+    media_packet = payload_data.get('image', '')
     
-    if me and target:
-        dm_id = "-".join(sorted([me, target]))
-        dm_record = {
-            'dm_id': dm_id,
-            'text': text,
-            'image': image,
-            'sender': me,
-            'timestamp': datetime.now().strftime('%I:%M %p')
-        }
-        append_row(DB_DMS, dm_record)
-        return jsonify({"status": "success"})
-    return jsonify({"error": "malformed_packet"}), 400
-
-# --- PROPRIETARY AERO DEVELOPER API PORTAL ---
-
-@app.route('/developer/keygen', methods=['POST'])
-def generate_developer_key():
-    developer = session.get('username')
-    if not developer: return jsonify({"error": "unauthorized"}), 401
-    app_name = request.form.get('app_name', '').strip()
-    if not app_name: return jsonify({"error": "app_name_required"}), 400
+    if not target_recipient or (not message_text and not media_packet):
+        return jsonify({"error": "Malformed network package specifications"}), 400
+        
+    shared_dm_hash_key = "-".join(sorted([authenticated_identity, target_recipient]))
     
-    api_key = f"aero_local_{secrets.token_hex(12)}"
-    append_row(DB_KEYS, {"api_key": api_key, "developer": developer, "app_name": app_name})
-    return jsonify({"status": "minted", "api_key": api_key, "app_name": app_name})
-
-@app.route('/aero-api/v1/broadcast', methods=['POST'])
-def aero_custom_api_broadcast():
-    payload = request.get_json() or {}
-    api_key = payload.get('aero_key')
-    target_channel = payload.get('channel')
-    message_body = payload.get('message')
-    bot_identity = payload.get('sender_identity', 'AeroBot')
-
-    key_valid = False
-    app_source = "Unknown"
-    for row in read_rows(DB_KEYS):
-        if row['api_key'] == api_key:
-            key_valid = True
-            app_source = row['app_name']
-            break
-            
-    if not key_valid: return jsonify({"api_error": "Invalid aero_key"}), 403
-    if not target_channel or not message_body: return jsonify({"api_error": "Missing parameters"}), 400
-
-    transmission = {
-        'room': target_channel,
-        'text': message_body,
-        'image': '',
-        'sender': f"[Bot] {bot_identity}",
+    compiled_dm_node = {
+        'dm_id': shared_dm_hash_key,
+        'text': message_text,
+        'image': media_packet,
+        'sender': authenticated_identity,
         'timestamp': datetime.now().strftime('%I:%M %p')
     }
-    append_row(DB_CHATS, transmission)
-    return jsonify({"aero_status": "dispatched", "origin_app": app_source, "destination": target_channel}), 200
+    
+    MEMORY_DMS.append(compiled_dm_node)
+    optimize_memory_buffers()
+    return jsonify({"status": "success", "scope": "direct_message"})
 
+@app.route('/api/upload_story', methods=['POST'])
+def upload_story():
+    """ Provisions a Base64 image string as a global snap status node """
+    authenticated_identity = session.get('username')
+    if not authenticated_identity:
+        return jsonify({"error": "Session unauthenticated"}), 401
+        
+    payload_data = request.get_json() or {}
+    base64_image_data = payload_data.get('image')
+    
+    if not base64_image_data:
+        return jsonify({"error": "Empty visual array byte matrix allocation"}), 400
+        
+    compiled_story_node = {
+        'username': authenticated_identity,
+        'image': base64_image_data,
+        'timestamp': datetime.now().strftime('%I:%M %p')
+    }
+    
+    MEMORY_STORIES.append(compiled_story_node)
+    optimize_memory_buffers()
+    return jsonify({"status": "success", "scope": "stories_portal"})
+
+# -------------------------------------------------------------------------
+# SERVER CONTEXT INITIALIZATION RUNNERS
+# -------------------------------------------------------------------------
 if __name__ == '__main__':
-    print("\n--- AERO SNAP ENGINE RUNNING ---")
+    # Local diagnostic feedback log execution loop flags
+    print("\n========================================================")
+    print("      DAPCHAT CORE SERVICE NETWORK ENGINE STANDALONE    ")
+    print("========================================================")
+    print(" >>> Mode: High-Performance Network Polling Protocol Active")
+    print(" >>> Address Allocation Target: http://127.0.0.1:5000\n")
     app.run(host="127.0.0.1", port=5000, debug=True)

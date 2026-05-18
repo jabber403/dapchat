@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aero Snap - Initialize Identity</title>
+    <title>DapChat - Register System Profile</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden; }
         
         .auth-container { width: 400px; padding: 40px; background: rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); text-align: center; color: white; }
         
-        .auth-logo { font-size: 2.5rem; margin-bottom: 10px; font-weight: bold; }
+        .auth-logo { font-size: 2.5rem; margin-bottom: 10px; font-weight: bold; letter-spacing: -1px; }
         .auth-logo span { color: #fffc00; }
         p { color: rgba(255, 255, 255, 0.6); margin-bottom: 30px; font-size: 0.95rem; }
         
@@ -18,7 +18,7 @@
         .form-group label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255, 255, 255, 0.5); margin-bottom: 8px; font-weight: 600; }
         
         input[type="text"], input[type="password"] { width: 100%; padding: 14px 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.3); color: white; outline: none; font-size: 1rem; }
-        input:focus { border-color: #fffc00; background: rgba(0, 0, 0, 0.4); }
+        input:focus { border-color: #fffc00; background: rgba(0, 0, 0, 0.4); box-shadow: 0 0 10px rgba(255, 252, 0, 0.2); }
         
         .submit-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #fffc00; color: black; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
         .submit-btn:hover { background: #e6e200; }
@@ -30,23 +30,23 @@
 </head>
 <body>
     <div class="auth-container">
-        <div class="auth-logo">Aero<span>Snap</span></div>
-        <p>Initialize a new database record</p>
+        <div class="auth-logo">Dap<span>Chat</span></div>
+        <p>Initialize a fresh network identifier profile</p>
         
         <form action="/signup" method="POST">
             <div class="form-group">
-                <label>Choose Handle</label>
-                <input type="text" name="username" placeholder="@username" required autocomplete="off">
+                <label>Register Handle</label>
+                <input type="text" name="username" placeholder="Choose Username" required autocomplete="off">
             </div>
             <div class="form-group">
-                <label>Set Security Key</label>
-                <input type="password" name="password" placeholder="••••••••" required>
+                <label>Set Access Key</label>
+                <input type="password" name="password" placeholder="Create Password" required>
             </div>
-            <button type="submit" class="submit-btn">Mint Credentials</button>
+            <button type="submit" class="submit-btn">Mint New Profile</button>
         </form>
         
         <div class="switch-link">
-            Already registered? <a href="/login">Secure Login</a>
+            Possess an identity already? <a href="/login">Secure Log In</a>
         </div>
     </div>
 </body>

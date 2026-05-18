@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aero Snap - Standalone Platform</title>
+    <title>DapChat - Workspace</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #111, #223, #111); overflow: hidden; }
+        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden; }
         .platform-container { width: 1100px; height: 780px; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.05); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); overflow: hidden; }
         
-        /* Snapchat Horizontal Stories Shelf Bar */
+        /* Stories Shelf Bar */
         .stories-container { height: 110px; display: flex; align-items: center; padding: 0 20px; gap: 15px; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.05); overflow-x: auto; }
-        .story-node { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fffc00; padding: 2px; cursor: pointer; flex-shrink: 0; text-align: center; position: relative; }
+        .story-container-node { display: flex; flex-direction: column; align-items: center; }
+        .story-node { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fffc00; padding: 2px; cursor: pointer; flex-shrink: 0; }
         .story-node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .story-label { font-size: 10px; color: white; margin-top: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 70px; }
-        .add-story-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        .story-label { font-size: 10px; color: white; margin-top: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 70px; text-align: center; }
+        .add-story-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; flex-shrink: 0; font-size: 1.5rem; }
         
         .main-workspace { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 280px; background: rgba(0,0,0,0.3); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto; }
@@ -22,15 +23,11 @@
         .sidebar h3 { color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
         .item-btn { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.02); color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
         .item-btn:hover, .item-btn.active { background: #fffc00; color: black; font-weight: 600; }
-        .creation-form { display: flex; gap: 6px; }
-        .creation-form input { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; outline: none; }
-        .creation-form button { padding: 6px 10px; background: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
         .chat-engine { flex: 1; display: flex; flex-direction: column; }
         .chat-header { padding: 15px 25px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); color: white; font-weight: 600; }
         .messages-area { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         
-        /* Message Bubbles layout featuring Image containers */
         .msg-wrap { display: flex; flex-direction: column; max-width: 50%; color: white; }
         .msg-wrap.me { align-self: flex-end; }
         .msg-wrap.other { align-self: flex-start; }
@@ -45,7 +42,7 @@
         .input-bar button { padding: 14px 24px; border-radius: 25px; border: none; background: #fffc00; color: black; font-weight: bold; cursor: pointer; }
         .user-tag { margin-top: auto; color: #fffc00; font-size: 0.85rem; }
         
-        /* Modal Overlay For Viewing Stories Fullscreen */
+        /* Fullscreen View Modal Overlay */
         .story-overlay { display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
         .story-overlay img { max-height: 80vh; max-width: 90vw; border-radius: 16px; box-shadow: 0 0 30px rgba(255,255,255,0.1); }
         .story-overlay h2 { color: white; margin-bottom: 15px; font-weight: 400; }
@@ -89,17 +86,7 @@
                         <button class="item-btn" onclick="switchDM('{{ user }}')">💬 {{ user }}</button>
                     {% endfor %}
                 </div>
-                <div class="sidebar-section">
-                    <h3>Aero Custom Mint</h3>
-                    {% for key in developer_keys %}
-                        <div class="item-btn" style="cursor:pointer; font-size:11px; opacity:0.8; font-family:monospace;" onclick="alert('Key Details:\n\n{{key}}')">🔑 View Active Key</div>
-                    {% endfor %}
-                    <div class="creation-form">
-                        <input type="text" id="app-name-input" placeholder="Application Profile Name" autocomplete="off">
-                        <button onclick="mintDeveloperKey()">Mint</button>
-                    </div>
-                </div>
-                <div class="user-tag">@{{ username }}<br><br><a href="/logout" style="color:#ff6b6b; text-decoration:none;">[Disconnect]</a></div>
+                <div class="user-tag">Logged in as:<br><strong>@{{ username }}</strong><br><br><a href="/logout" style="color:#ff6b6b; text-decoration:none;">[Disconnect]</a></div>
             </div>
             <div class="chat-engine">
                 <div class="chat-header" id="current-chat-title">Group: # General</div>
@@ -164,7 +151,7 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onloadend = function() {
-                    payload.image = reader.result; // Attach Base64 image payload string
+                    payload.image = reader.result;
                     executeSendRequest(url, payload);
                 }
                 reader.readAsDataURL(file);
@@ -178,7 +165,7 @@
             fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             .then(() => { 
                 inputField.value = ''; 
-                chatFilePicker.value = ''; // Reset file input tracker
+                chatFilePicker.value = ''; 
                 fetchMessages(); 
             });
         }
@@ -192,7 +179,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: reader.result })
-                }).then(() => { alert("Story Posted!"); window.location.reload(); });
+                }).then(() => { alert("Story Posted Successfully!"); window.location.reload(); });
             }
             reader.readAsDataURL(file);
         }
@@ -201,16 +188,6 @@
             document.getElementById('story-viewer-author').innerText = "@" + author + "'s Story";
             document.getElementById('story-viewer-img').src = base64Image;
             document.getElementById('story-viewer').style.display = "flex";
-        }
-
-        function mintDeveloperKey() {
-            const name = document.getElementById('app-name-input').value.trim();
-            if(!name) return;
-            const f = new FormData(); f.append('app_name', name);
-            fetch('/developer/keygen', { method: 'POST', body: f }).then(r => r.json()).then(d => {
-                if(d.error) alert(d.error);
-                else { alert(`Local Key Generated:\n${d.api_key}`); window.location.reload(); }
-            });
         }
 
         inputField.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
