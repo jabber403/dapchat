@@ -10,14 +10,12 @@
             height: 100vh; display: flex; justify-content: center; align-items: center;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden;
         }
-        
         .platform-container {
             width: 900px; height: 650px; display: flex; flex-direction: column;
             background: rgba(255, 255, 255, 0.1); border-radius: 24px;
             backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); overflow: hidden;
         }
-
         .stories-bar {
             height: 90px; display: flex; align-items: center; padding: 0 20px; gap: 15px;
             background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -31,9 +29,7 @@
             background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white;
             padding: 6px 12px; border-radius: 15px; outline: none;
         }
-
         .main-workspace { display: flex; flex: 1; }
-
         .sidebar {
             width: 220px; background: rgba(0,0,0,0.15); border-right: 1px solid rgba(255,255,255,0.1);
             display: flex; flex-direction: column; padding: 15px; gap: 10px;
@@ -45,20 +41,16 @@
         }
         .room-btn:hover, .room-btn.active { background: rgba(255,255,255,0.2); font-weight: bold; }
         .user-tag { margin-top: auto; color: #a1c4fd; font-size: 0.9rem; }
-
         .chat-engine { flex: 1; display: flex; flex-direction: column; }
         .messages-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
         .msg-wrap { display: flex; flex-direction: column; max-width: 70%; animation: pop 0.2s ease; }
         @keyframes pop { from {transform: scale(0.95); opacity:0;} to {transform:scale(1); opacity:1;} }
         .msg-author { font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-bottom: 2px; padding: 0 5px; }
-        
         .msg-bubble { padding: 10px 14px; border-radius: 14px; color: white; font-size: 0.95rem; }
         .msg-wrap.me { align-self: flex-end; }
         .msg-wrap.me .msg-bubble { background: rgba(0, 123, 255, 0.3); border: 1px solid rgba(0,123,255,0.4); }
         .msg-wrap.other { align-self: flex-start; }
         .msg-wrap.other .msg-bubble { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); }
-
         .input-bar { padding: 15px; display: flex; gap: 10px; background: rgba(0,0,0,0.1); }
         .input-bar input {
             flex: 1; padding: 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
@@ -68,7 +60,6 @@
     </style>
 </head>
 <body>
-
     <div class="platform-container">
         <div class="stories-bar">
             <form class="story-form" action="/create-story" method="POST" style="margin-right:15px;">
@@ -78,20 +69,17 @@
                 <div class="story-bubble"><strong>@{{ story.username }}:</strong> {{ story.content }} <span style="font-size:10px; opacity:0.6;">({{story.time}})</span></div>
             {% endfor %}
         </div>
-
         <div class="main-workspace">
             <div class="sidebar">
                 <h3>GROUP CHATS</h3>
                 <button class="room-btn active" onclick="switchRoom('General')"># General</button>
                 <button class="room-btn" onclick="switchRoom('Gaming')"># Gaming</button>
                 <button class="room-btn" onclick="switchRoom('Code-Talk')"># Code-Talk</button>
-                
                 <div class="user-tag">
                     Logged in as:<br><strong>@{{ username }}</strong><br>
                     <a href="/logout" style="color: #ff6b6b; text-decoration:none; font-size:0.8rem;">[Logout]</a>
                 </div>
             </div>
-
             <div class="chat-engine">
                 <div class="messages-area" id="msg-box"></div>
                 <div class="input-bar">
@@ -101,20 +89,16 @@
             </div>
         </div>
     </div>
-
     <script>
         const socket = io();
         const myUsername = "{{ username }}";
         let currentRoom = "General";
-
         const msgBox = document.getElementById('msg-box');
         const typingBox = document.getElementById('typing-box');
         const sendBtn = document.getElementById('send-btn');
-
         socket.on('connect', () => {
             socket.emit('join', { room: currentRoom });
         });
-
         function switchRoom(newRoom) {
             if(newRoom === currentRoom) return;
             document.querySelectorAll('.room-btn').forEach(btn => {
@@ -124,34 +108,27 @@
             currentRoom = newRoom;
             socket.emit('join', { room: currentRoom });
         }
-
         function appendMessage(sender, text) {
             const wrap = document.createElement('div');
             wrap.classList.add('msg-wrap');
             wrap.classList.add(sender === myUsername ? 'me' : 'other');
-
             const author = document.createElement('div');
             author.classList.add('msg-author');
             author.innerText = '@' + sender;
-
             const bubble = document.createElement('div');
             bubble.classList.add('msg-bubble');
             bubble.innerText = text;
-
             wrap.appendChild(author);
             wrap.appendChild(bubble);
             msgBox.appendChild(wrap);
             msgBox.scrollTop = msgBox.scrollHeight;
         }
-
         socket.on('receive_message', (data) => {
             appendMessage(data.sender, data.text);
         });
-
         socket.on('room_history', (history) => {
             history.forEach(msg => appendMessage(msg.sender, msg.text));
         });
-
         function sendMsg() {
             const val = typingBox.value.trim();
             if(val !== '') {
@@ -159,7 +136,6 @@
                 typingBox.value = '';
             }
         }
-
         sendBtn.addEventListener('click', sendMsg);
         typingBox.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
     </script>

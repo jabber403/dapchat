@@ -5,14 +5,13 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# SECURITY PRODUCION FIX: Pulls the key safely from Render's Environment Variables
+# SECURITY PRODUCTION FIX: Pulls the key safely from Render's Environment Variables
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'local_development_fallback_key_123')
 
 # Using standard WebSockets without heavy database extension requirements
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- IN-MEMORY DATABASE (Pure Python) ---
-# Safe for all Python versions, including experimental environments
 USERS = {}          # Format: { "username": "password" }
 STORIES = []        # Format: [ {"username": "...", "content": "...", "time": "..."} ]
 CHAT_HISTORY = {    # Stores persistent messages per room
@@ -23,7 +22,6 @@ CHAT_HISTORY = {    # Stores persistent messages per room
 
 @app.route('/')
 def index():
-    # Protected route: If user isn't logged in, send them straight to login page
     if 'username' not in session:
         return redirect(url_for('login'))
     return render_template('index.html', username=session['username'], stories=STORIES)
@@ -53,7 +51,6 @@ def signup():
         if username in USERS:
             return "<h3>Username already taken! <a href='/signup'>Try again</a></h3>"
         
-        # Save user to memory dictionary
         USERS[username] = password
         session['username'] = username
         return redirect(url_for('index'))
@@ -76,12 +73,10 @@ def create_story():
             })
     return redirect(url_for('index'))
 
-# --- REAL-TIME CHAT EVENTS ---
 @socketio.on('join')
 def on_join(data):
     room = data['room']
     join_room(room)
-    # Send historical room data to the newly joined user
     emit('room_history', CHAT_HISTORY.get(room, []))
 
 @socketio.on('send_message')
@@ -91,14 +86,11 @@ def handle_message(data):
         'text': data['text'],
         'sender': session.get('username', 'Anonymous')
     }
-    # Append message to room array
     if room in CHAT_HISTORY:
         CHAT_HISTORY[room].append(msg_data)
         
     emit('receive_message', msg_data, to=room)
 
 if __name__ == '__main__':
-    # Cloud hosts tell your web application what port to use via an environment variable.
-    # This code dynamically grabs that port, defaulting to 5000 if running locally.
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port)
