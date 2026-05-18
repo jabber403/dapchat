@@ -3,292 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aero Platform - Ecosystem</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <title>Aero Platform - Custom Storage Engine</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body {
-            height: 100vh; display: flex; justify-content: center; align-items: center;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden;
-        }
-        .platform-container {
-            width: 1100px; height: 750px; display: flex; flex-direction: column;
-            background: rgba(255, 255, 255, 0.08); border-radius: 24px;
-            backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); overflow: hidden;
-        }
-        .stories-bar {
-            height: 85px; display: flex; align-items: center; padding: 0 20px; gap: 15px;
-            background: rgba(255, 255, 255, 0.04); border-bottom: 1px solid rgba(255,255,255,0.1);
-            overflow-x: auto; color: white;
-        }
-        .story-bubble {
-            padding: 8px 16px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); 
-            border-radius: 20px; font-size: 0.85rem; min-width: max-content;
-        }
-        .story-form input {
-            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white;
-            padding: 8px 14px; border-radius: 20px; outline: none; font-size: 0.85rem;
-        }
-        .main-workspace { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Left Control Panel Panel */
-        .sidebar {
-            width: 280px; background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden; }
+        .platform-container { width: 1100px; height: 710px; display: flex; background: rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); overflow: hidden; }
+        .sidebar { width: 280px; background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto; }
         .sidebar-section { display: flex; flex-direction: column; gap: 8px; }
-        .sidebar h3 { color: rgba(255,255,255,0.6); font-size: 0.75rem; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
-        
-        .item-btn {
-            padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.03);
-            color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; transition: all 0.2s;
-            font-size: 0.9rem; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
-        }
-        .item-btn:hover, .item-btn.active { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); font-weight: 600; }
-        
-        .creation-form { display: flex; gap: 6px; margin-top: 4px; }
-        .creation-form input {
-            flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; outline: none;
-        }
-        .creation-form button {
-            padding: 6px 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 8px;
-            font-weight: bold; cursor: pointer; font-size: 0.8rem;
-        }
-
-        /* Right Window Engine */
-        .chat-engine { flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.05); }
-        .chat-header {
-            padding: 15px 25px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);
-            color: white; font-weight: 600; font-size: 1.1rem;
-        }
+        .sidebar h3 { color: rgba(255,255,255,0.6); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+        .item-btn { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+        .item-btn:hover, .item-btn.active { background: rgba(255,255,255,0.15); font-weight: 600; }
+        .creation-form { display: flex; gap: 6px; }
+        .creation-form input { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; outline: none; }
+        .creation-form button { padding: 6px 10px; background: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .chat-engine { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px 25px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05); color: white; font-weight: 600; }
         .messages-area { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        
-        /* Text Bubbles Styling */
-        .msg-wrap { display: flex; flex-direction: column; max-width: 65%; animation: bubblePop 0.25s ease-out; }
-        @keyframes bubblePop { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .msg-author { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 3px; padding: 0 4px; }
-        .msg-bubble { padding: 11px 15px; border-radius: 16px; color: white; font-size: 0.95rem; line-height: 1.4; }
-        
+        .msg-wrap { display: flex; flex-direction: column; max-width: 65%; color: white; }
         .msg-wrap.me { align-self: flex-end; }
-        .msg-wrap.me .msg-bubble { background: linear-gradient(135deg, #007aff, #0055d4); box-shadow: 0 4px 12px rgba(0,122,255,0.2); }
         .msg-wrap.other { align-self: flex-start; }
-        .msg-wrap.other .msg-bubble { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        .input-bar { padding: 20px; display: flex; gap: 12px; background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.05); }
-        .input-bar input {
-            flex: 1; padding: 14px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(0,0,0,0.2); color: white; outline: none; font-size: 0.95rem; transition: all 0.3s;
-        }
-        .input-bar input:focus { border-color: rgba(255,255,255,0.4); background: rgba(0,0,0,0.3); }
-        .input-bar button {
-            padding: 0 24px; border-radius: 25px; border: none; background: #ffffff;
-            color: #1a2a3a; font-weight: bold; cursor: pointer; transition: all 0.2s;
-        }
-        .input-bar button:hover { background: rgba(255,255,255,0.9); transform: scale(1.02); }
-        
-        .user-tag { margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); color: #a1c4fd; font-size: 0.85rem; }
+        .msg-author { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
+        .msg-bubble { padding: 11px 15px; border-radius: 16px; background: rgba(255, 255, 255, 0.15); font-size: 0.95rem; }
+        .msg-wrap.me .msg-bubble { background: #007aff; }
+        .input-bar { padding: 20px; display: flex; gap: 12px; background: rgba(0,0,0,0.15); }
+        .input-bar input { flex: 1; padding: 14px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: white; outline: none; }
+        .input-bar button { padding: 0 24px; border-radius: 25px; border: none; background: white; font-weight: bold; cursor: pointer; }
+        .user-tag { margin-top: auto; color: #a1c4fd; font-size: 0.85rem; }
     </style>
 </head>
 <body>
-
     <div class="platform-container">
-        <div class="stories-bar">
-            <form class="story-form" action="/create-story" method="POST">
-                <input type="text" name="story_content" placeholder="+ Share a thought..." required autocomplete="off">
-            </form>
-            {% for story in stories %}
-                <div class="story-bubble"><strong>@{{ story.username }}:</strong> {{ story.content }}</div>
-            {% endfor %}
-        </div>
-
-        <div class="main-workspace">
-            <div class="sidebar">
-                
-                <div class="sidebar-section">
-                    <h3>Group Channels</h3>
-                    {% for room_name, room_data in rooms.items() if not room_data.is_private %}
-                        <button class="item-btn {% if room_name == 'General' %}active{% endif %}" onclick="switchGroup('{{ room_name }}')"># {{ room_name }}</button>
-                    {% endfor %}
-                </div>
-
-                <div class="sidebar-section">
-                    <h3>Private Guilds</h3>
-                    {% for room_name, room_data in rooms.items() if room_data.is_private %}
-                        <button class="item-btn" onclick="switchGroup('{{ room_name }}')">🔒 {{ room_name }}</button>
-                    {% endfor %}
-                    <form class="creation-form" action="/create-private-group" method="POST">
-                        <input type="text" name="group_name" placeholder="New group..." required autocomplete="off">
-                        <button type="submit">+</button>
-                    </form>
-                </div>
-
-                <div class="sidebar-section">
-                    <h3>Direct Messages</h3>
-                    {% for user in users_list %}
-                        <button class="item-btn" onclick="switchDM('{{ user }}')">💬 {{ user }}</button>
-                    {% endfor %}
-                </div>
-
-                <div class="sidebar-section">
-                    <h3>Bot Ecosystem</h3>
-                    {% for bot in bots_list %}
-                        <div class="item-btn" style="cursor:default; opacity:0.8;">🤖 @{{ bot }}</div>
-                    {% endfor %}
-                    <div class="creation-form">
-                        <input type="text" id="bot-name-input" placeholder="my_helper_bot" autocomplete="off">
-                        <button onclick="mintBot()">Mint</button>
-                    </div>
-                </div>
-
-                <div class="user-tag">
-                    Current Identity:<br><strong style="font-size:1rem; color:white;">@{{ username }}</strong><br><br>
-                    <a href="/logout" style="color: #ff6b6b; text-decoration:none; font-weight:600;">[Disconnect Session]</a>
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>Channels</h3>
+                {% for room_name, r_data in rooms.items() if not r_data.is_private %}
+                    <button class="item-btn {% if room_name == 'General' %}active{% endif %}" onclick="switchGroup('{{ room_name }}')"># {{ room_name }}</button>
+                {% endfor %}
+            </div>
+            <div class="sidebar-section">
+                <h3>Direct Messages</h3>
+                {% for user in users_list %}
+                    <button class="item-btn" onclick="switchDM('{{ user }}')">💬 {{ user }}</button>
+                {% endfor %}
+            </div>
+            <div class="sidebar-section">
+                <h3>Custom API Profiles</h3>
+                {% for key in developer_keys %}
+                    <div class="item-btn" style="cursor:pointer; font-size:11px; opacity:0.8; font-family:monospace;" onclick="alert('Key Details: {{key}}')">🔑 Click to View Key</div>
+                {% endfor %}
+                <div class="creation-form">
+                    <input type="text" id="app-name-input" placeholder="App Identity Name" autocomplete="off">
+                    <button onclick="mintDeveloperKey()">Mint</button>
                 </div>
             </div>
-
-            <div class="chat-engine">
-                <div class="chat-header" id="current-chat-title">Group: # General</div>
-                <div class="messages-area" id="msg-container"></div>
-                <div class="input-bar">
-                    <input type="text" id="chat-input-field" placeholder="Transmit data..." autocomplete="off">
-                    <button id="dispatch-btn">Send</button>
-                </div>
+            <div class="user-tag">@{{ username }}<br><br><a href="/logout" style="color:#ff6b6b; text-decoration:none;">[Disconnect]</a></div>
+        </div>
+        <div class="chat-engine">
+            <div class="chat-header" id="current-chat-title">Group: # General</div>
+            <div class="messages-area" id="msg-container"></div>
+            <div class="input-bar">
+                <input type="text" id="chat-input-field" placeholder="Type message..." autocomplete="off">
+                <button id="dispatch-btn" onclick="sendMessage()">Send</button>
             </div>
         </div>
     </div>
 
     <script>
-        // iOS/iPadOS STABILITY FIX: Added explicit transport fallbacks for network drops
-        const socket = io({
-            transports: ['websocket', 'polling'],
-            upgrade: true
-        });
-        
         const clientUser = "{{ username }}";
-        let activeChatMode = "group"; 
-        let activeTarget = "General"; 
-        
+        let activeChatMode = "group";
+        let activeTarget = "General";
         const msgContainer = document.getElementById('msg-container');
         const inputField = document.getElementById('chat-input-field');
-        const dispatchBtn = document.getElementById('dispatch-btn');
         const chatTitle = document.getElementById('current-chat-title');
 
-        socket.on('connect', () => {
-            socket.emit('join_room', { room: activeTarget });
-        });
-
-        function switchGroup(roomName) {
-            activeChatMode = "group";
-            activeTarget = roomName;
-            chatTitle.innerText = "Group: # " + roomName;
-            msgContainer.innerHTML = '';
-            
-            updateSidebarActiveStates();
-            socket.emit('join_room', { room: roomName });
-        }
-
-        function switchDM(targetUser) {
-            activeChatMode = "dm";
-            activeTarget = targetUser;
-            chatTitle.innerText = "Direct Line: @" + targetUser;
-            msgContainer.innerHTML = '';
-            
-            updateSidebarActiveStates();
-            socket.emit('join_private_dm', { target: targetUser });
-        }
-
-        function updateSidebarActiveStates() {
-            document.querySelectorAll('.item-btn').forEach(btn => {
-                const text = btn.innerText;
-                if (activeChatMode === "group") {
-                    btn.classList.toggle('active', text.includes('# ' + activeTarget) || text.includes('🔒 ' + activeTarget));
-                } else {
-                    btn.classList.toggle('active', text.includes('💬 ' + activeTarget));
-                }
+        function switchGroup(name) { activeChatMode = "group"; activeTarget = name; chatTitle.innerText = "Group: # " + name; fetchMessages(); updateUI(); }
+        function switchDM(name) { activeChatMode = "dm"; activeTarget = name; chatTitle.innerText = "DM: @" + name; fetchMessages(); updateUI(); }
+        
+        function updateUI() {
+            document.querySelectorAll('.item-btn').forEach(b => {
+                if(activeChatMode === "group") b.classList.toggle('active', b.innerText.includes('# ' + activeTarget));
+                else b.classList.toggle('active', b.innerText.includes('💬 ' + activeTarget));
             });
         }
 
-        function displayMessage(sender, text) {
-            const wrap = document.createElement('div');
-            wrap.classList.add('msg-wrap', sender === clientUser ? 'me' : 'other');
-            
-            const author = document.createElement('div');
-            author.classList.add('msg-author');
-            author.innerText = '@' + sender;
-            
-            const bubble = document.createElement('div');
-            bubble.classList.add('msg-bubble');
-            bubble.innerText = text;
-            
-            wrap.appendChild(author);
-            wrap.appendChild(bubble);
-            msgContainer.appendChild(wrap);
+        function renderMessages(list) {
+            msgContainer.innerHTML = '';
+            list.forEach(m => {
+                const w = document.createElement('div');
+                w.classList.add('msg-wrap', m.sender === clientUser ? 'me' : 'other');
+                w.innerHTML = `<div class="msg-author">@${m.sender}</div><div class="msg-bubble">${m.text}</div>`;
+                msgContainer.appendChild(w);
+            });
             msgContainer.scrollTop = msgContainer.scrollHeight;
         }
 
-        socket.on('sync_history', (history) => {
-            history.forEach(packet => displayMessage(packet.sender, packet.text));
-        });
-
-        socket.on('sync_dm_history', (history) => {
-            history.forEach(packet => displayMessage(packet.sender, packet.text));
-        });
-
-        socket.on('receive_message', (data) => {
-            if (activeChatMode === "group" && data.room === activeTarget) {
-                displayMessage(data.msg.sender, data.msg.text);
-            }
-        });
-
-        socket.on('receive_private_dm', (packet) => {
-            if (activeChatMode === "dm") {
-                displayMessage(packet.sender, packet.text);
-            }
-        });
-
-        socket.on('error_alert', (data) => {
-            alert(data.msg);
-        });
-
-        // Processing active event message dispatching
-        function sendMessage() {
-            // iOS COMPATIBILITY FIX: Switched completely to standard trim expressions
-            const cleanText = inputField.value.trim();
-            if (!cleanText) return;
-
-            if (activeChatMode === "group") {
-                socket.emit('send_group_msg', { room: activeTarget, text: cleanText });
-            } else {
-                socket.emit('send_private_dm', { target: activeTarget, text: cleanText });
-                displayMessage(clientUser, cleanText); 
-            }
-            inputField.value = '';
+        function fetchMessages() {
+            let url = activeChatMode === "group" ? `/api/get_messages?room=${activeTarget}` : `/api/get_dms?target=${activeTarget}`;
+            fetch(url).then(r => r.json()).then(renderMessages);
         }
 
-        dispatchBtn.addEventListener('click', sendMessage);
-        inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        function sendMessage() {
+            const txt = inputField.value.trim();
+            if(!txt) return;
+            let url = activeChatMode === "group" ? '/api/send_message' : '/api/send_dm';
+            let body = activeChatMode === "group" ? { room: activeTarget, text: txt } : { target: activeTarget, text: txt };
+            
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(() => { inputField.value = ''; fetchMessages(); });
+        }
 
-        function mintBot() {
-            const inputElement = document.getElementById('bot-name-input');
-            const targetBotName = inputElement.value.trim();
-            if(!targetBotName) return;
-
-            const formData = new FormData();
-            formData.append('bot_name', targetBotName);
-
-            fetch('/botfather/create', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if(data.error) {
-                    alert("BotFather Refusal: " + data.error);
-                } else {
-                    alert(`SUCCESS!\nBot: ${data.bot_username}\nToken: ${data.access_token}\n\nKeep your token safe!`);
-                    window.location.reload();
-                }
+        function mintDeveloperKey() {
+            const name = document.getElementById('app-name-input').value.trim();
+            if(!name) return;
+            const f = new FormData(); f.append('app_name', name);
+            fetch('/developer/keygen', { method: 'POST', body: f }).then(r => r.json()).then(d => {
+                if(d.error) alert(d.error);
+                else { alert(`Aero Key Minted for App: ${d.app_name}\nKey: ${d.api_key}`); window.location.reload(); }
             });
         }
+
+        inputField.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+        setInterval(fetchMessages, 2500); 
+        fetchMessages();
     </script>
 </body>
 </html>

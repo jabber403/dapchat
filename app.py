@@ -1,49 +1,70 @@
 import os
-import uuid
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-from flask_socketio import SocketIO, emit, join_room, leave_room
+import json
+import secrets
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from datetime import datetime
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'aero_flatfile_db_2026')
 
-# PRODUCTION SECURITY: Uses a robust variable on Render with a local backup string
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'aero_secure_fallback_platform_key_2026')
+# --- CUSTOM FLAT-FILE DATABASE CORE ENGINE ---
+# This forces data onto the disk immediately, keeping RAM close to 0MB.
+DB_USERS = "db_users.txt"
+DB_KEYS = "db_keys.txt"
+DB_CHATS = "db_chats.txt"
+DB_DMS = "db_dms.txt"
 
-# Initialize SocketIO with cross-origin parameters for flexible connectivity
-socketio = SocketIO(app, cors_allowed_origins="*")
+def init_db():
+    """ Ensures all flat-file database tables exist on boot """
+    for db_file in [DB_USERS, DB_KEYS, DB_CHATS, DB_DMS]:
+        if not os.path.exists(db_file):
+            with open(db_file, "w") as f:
+                f.write("")
 
-# --- CENTRAL STORAGE SYSTEM (In-Memory Engine) ---
-USERS = {}          # Database Schema: { "username": "password" }
-BOTS = {}          # Database Schema: { "bot_token": { "name": "...", "creator": "..." } }
-STORIES = []        # Global list of temporary user stories
+init_db()
 
-# Complete Workspace Chat System
-GROUP_CHATS = {
-    "General": {"is_private": False, "allowed_members": [], "history": []},
-    "Gaming": {"is_private": False, "allowed_members": [], "history": []},
-    "Code-Talk": {"is_private": False, "allowed_members": [], "history": []}
-}
+def read_rows(file_path):
+    """ Custom database row scanner """
+    rows = []
+    with open(file_path, "r") as f:
+        for line in f:
+            if line.strip():
+                rows.append(json.loads(line.strip()))
+    return rows
 
-# Private Direct Messages Registry (Keys generated dynamically as "user1-user2")
-PRIVATE_DMS = {}
+def append_row(file_path, data):
+    """ Custom database row writer """
+    with open(file_path, "a") as f:
+        f.write(json.dumps(data) + "\n")
 
-# --- CORE USER WEB INTERFACES ---
+# --- APP INTERFACES & AUTHENTICATION SYSTEMS ---
 
 @app.route('/')
 def index():
     if 'username' not in session:
         return redirect(url_for('login'))
-        
-    # Build list of user profiles to choose from for Private DMs
-    available_users = [u for u in USERS.keys() if u != session['username'] and not u.endswith('_bot')]
+    
+    current_user = session['username']
+    all_users = [row['username'] for row in read_rows(DB_USERS)]
+    available_users = [u for u in all_users if u != current_user and not u.startswith('[Bot]')]
+    
+    # Filter keys belonging to this developer
+    all_keys = read_rows(DB_KEYS)
+    user_keys = [row['api_key'] for row in all_keys if row['developer'] == current_user]
+    
+    # Unique system room structures
+    rooms = {
+        "General": {"is_private": False},
+        "Gaming": {"is_private": False},
+        "Code-Talk": {"is_private": False}
+    }
     
     return render_template(
         'index.html', 
-        username=session['username'], 
-        stories=STORIES,
-        rooms=GROUP_CHATS,
+        username=current_user, 
+        rooms=rooms,
         users_list=available_users,
-        bots_list=[b['name'] for b in BOTS.values() if b['creator'] == session['username']]
+        developer_keys=user_keys
     )
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -52,11 +73,11 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password')
         
-        if username in USERS and USERS[username] == password:
-            session['username'] = username
-            return redirect(url_for('index'))
-            
-        return "<h3>Authentication Failed. <a href='/login'>Try Again</a></h3>"
+        for row in read_rows(DB_USERS):
+            if row['username'] == username and row['password'] == password:
+                session['username'] = username
+                return redirect(url_for('index'))
+        return "<h3>Login Failed. <a href='/login'>Try Again</a></h3>"
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -65,12 +86,15 @@ def signup():
         username = request.form.get('username', '').strip()
         password = request.form.get('password')
         
-        if not username or not password:
-            return "<h3>Fields cannot be empty. <a href='/signup'>Try Again</a></h3>"
-        if username in USERS or username.endswith('_bot'):
-            return "<h3>Username unavailable or reserved. <a href='/signup'>Try Again</a></h3>"
+        if not username or not password or username.startswith('[Bot]'):
+            return "<h3>Invalid input choices. <a href='/signup'>Try Again</a></h3>"
             
-        USERS[username] = password
+        # Check duplicate records
+        for row in read_rows(DB_USERS):
+            if row['username'] == username:
+                return "<h3>Username Taken. <a href='/signup'>Try Again</a></h3>"
+                
+        append_row(DB_USERS, {"username": username, "password": password})
         session['username'] = username
         return redirect(url_for('index'))
     return render_template('signup.html')
@@ -80,167 +104,105 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
-@app.route('/create-story', methods=['POST'])
-def create_story():
-    if 'username' in session:
-        content = request.form.get('story_content', '').strip()
-        if content:
-            STORIES.append({
-                'username': session['username'],
-                'content': content,
-                'time': datetime.now().strftime('%I:%M %p')
-            })
-    return redirect(url_for('index'))
+# --- CUSTOM STORAGE SYNCHRONIZATION API ---
 
-# --- PRIVATE GROUPS SYSTEM ---
+@app.route('/api/get_messages', methods=['GET'])
+def get_messages():
+    room = request.args.get('room')
+    all_chats = read_rows(DB_CHATS)
+    # Filter database entries matching this specific room name
+    room_history = [msg for msg in all_chats if msg.get('room') == room]
+    return jsonify(room_history[-15:]) # Limit payload sizes to keep execution clean
 
-@app.route('/create-private-group', methods=['POST'])
-def create_private_group():
-    creator = session.get('username')
-    if not creator: return redirect(url_for('login'))
+@app.route('/api/send_message', methods=['POST'])
+def send_message():
+    user = session.get('username')
+    data = request.get_json() or {}
+    room = data.get('room')
+    text = data.get('text')
     
-    group_name = request.form.get('group_name', '').strip().replace(" ", "-")
-    if group_name and group_name not in GROUP_CHATS:
-        GROUP_CHATS[group_name] = {
-            "is_private": True,
-            "allowed_members": [creator],
-            "history": []
+    if user and room and text:
+        msg_record = {
+            'room': room,
+            'text': text,
+            'sender': user,
+            'timestamp': datetime.now().strftime('%I:%M %p')
         }
-    return redirect(url_for('index'))
+        append_row(DB_CHATS, msg_record)
+        return jsonify({"status": "success"})
+    return jsonify({"error": "malformed_packet"}), 400
 
-# --- DEVELOPER BOTFATHER API ENGINE ---
+@app.route('/api/get_dms', methods=['GET'])
+def get_dms():
+    me = session.get('username')
+    target = request.args.get('target')
+    if not me or not target: return jsonify([])
+    
+    dm_id = "-".join(sorted([me, target]))
+    all_dms = read_rows(DB_DMS)
+    dm_history = [msg for msg in all_dms if msg.get('dm_id') == dm_id]
+    return jsonify(dm_history[-15:])
 
-@app.route('/botfather/create', methods=['POST'])
-def create_bot():
-    creator = session.get('username')
-    if not creator:
-        return jsonify({"error": "Unauthorized session"}), 401
-        
-    bot_name = request.form.get('bot_name', '').strip()
-    if not bot_name.endswith('_bot') or " " in bot_name:
-        return jsonify({"error": "Bot username must look like: sample_bot"}), 400
-    if bot_name in USERS:
-        return jsonify({"error": "Bot username is already registered"}), 400
+@app.route('/api/send_dm', methods=['POST'])
+def send_dm():
+    me = session.get('username')
+    data = request.get_json() or {}
+    target = data.get('target')
+    text = data.get('text')
+    
+    if me and target and text:
+        dm_id = "-".join(sorted([me, target]))
+        dm_record = {
+            'dm_id': dm_id,
+            'text': text,
+            'sender': me,
+            'timestamp': datetime.now().strftime('%I:%M %p')
+        }
+        append_row(DB_DMS, dm_record)
+        return jsonify({"status": "success"})
+    return jsonify({"error": "malformed_packet"}), 400
 
-    # Mint a secure application programming token
-    bot_token = f"aero-{uuid.uuid4().hex[:14]}"
-    
-    BOTS[bot_token] = {
-        "name": bot_name,
-        "creator": creator
-    }
-    
-    # Establish bot instance inside routing permissions
-    USERS[bot_name] = "APP_BOT_PROTECTED_PASSWORD_SYSTEM"
-    
-    return jsonify({
-        "status": "success",
-        "bot_username": f"@{bot_name}",
-        "access_token": bot_token,
-        "endpoint": f"/api/bot/{bot_token}/sendMessage"
-    })
+# --- PROPRIETARY AERO DEVELOPER API PORTAL ---
 
-@app.route('/api/bot/<token>/sendMessage', methods=['POST'])
-def bot_api_gateway(token):
-    if token not in BOTS:
-        return jsonify({"error": "Access token unrecognized"}), 403
-        
-    bot_profile = BOTS[token]
-    payload = request.get_json() or request.form
+@app.route('/developer/keygen', methods=['POST'])
+def generate_developer_key():
+    developer = session.get('username')
+    if not developer: return jsonify({"error": "unauthorized"}), 401
+    app_name = request.form.get('app_name', '').strip()
+    if not app_name: return jsonify({"error": "app_name_required"}), 400
     
-    target_chat = payload.get('chat_id')
-    text_content = payload.get('text')
-    
-    if not target_chat or not text_content:
-        return jsonify({"error": "Parameters missing: chat_id and text required"}), 400
-        
-    if target_chat not in GROUP_CHATS:
-        return jsonify({"error": "Target channel layout not found"}), 404
+    api_key = f"aero_live_{secrets.token_hex(12)}"
+    append_row(DB_KEYS, {"api_key": api_key, "developer": developer, "app_name": app_name})
+    return jsonify({"status": "minted", "api_key": api_key, "app_name": app_name})
 
-    message_packet = {
-        'text': text_content,
-        'sender': bot_profile['name'],
-        'timestamp': datetime.now().strftime('%I:%M %p')
-    }
-    
-    # Pipeline the message straight into the workspace chat
-    GROUP_CHATS[target_chat]['history'].append(message_packet)
-    socketio.emit('receive_message', {
-        'room': target_chat,
-        'msg': message_packet
-    }, to=target_chat)
-    
-    return jsonify({"delivery": "fulfilled", "origin": bot_profile['name']}), 200
+@app.route('/aero-api/v1/broadcast', methods=['POST'])
+def aero_custom_api_broadcast():
+    payload = request.get_json() or {}
+    api_key = payload.get('aero_key')
+    target_channel = payload.get('channel')
+    message_body = payload.get('message')
+    bot_identity = payload.get('sender_identity', 'AeroBot')
 
-# --- WEBSOCKET REAL-TIME ARCHITECTURE ---
-
-@socketio.on('join_room')
-def handle_room_joining(data):
-    user = session.get('username')
-    room = data.get('room')
-    if not user or not room: return
-    
-    # Enforce strict verification rules for invite-only networks
-    if room in GROUP_CHATS and GROUP_CHATS[room]['is_private']:
-        if user not in GROUP_CHATS[room]['allowed_members']:
-            emit('error_alert', {'msg': 'Access Denied: Private Group Chat'})
-            return
+    # Validate key from database rows
+    key_valid = False
+    app_source = "Unknown"
+    for row in read_rows(DB_KEYS):
+        if row['api_key'] == api_key:
+            key_valid = True
+            app_source = row['app_name']
+            break
             
-    join_room(room)
-    emit('sync_history', GROUP_CHATS.get(room, {}).get('history', []))
+    if not key_valid: return jsonify({"api_error": "Invalid aero_key"}), 403
+    if not target_channel or not message_body: return jsonify({"api_error": "Missing parameters"}), 400
 
-@socketio.on('send_group_msg')
-def handle_group_distribution(data):
-    user = session.get('username')
-    room = data.get('room')
-    text = data.get('text')
-    if not user or not room or not text: return
-    
-    message_packet = {
-        'text': text,
-        'sender': user,
+    transmission = {
+        'room': target_channel,
+        'text': message_body,
+        'sender': f"[Bot] {bot_identity}",
         'timestamp': datetime.now().strftime('%I:%M %p')
     }
-    
-    if room in GROUP_CHATS:
-        GROUP_CHATS[room]['history'].append(message_packet)
-        emit('receive_message', {'room': room, 'msg': message_packet}, to=room)
-
-@socketio.on('join_private_dm')
-def handle_dm_joining(data):
-    me = session.get('username')
-    target = data.get('target')
-    if not me or not target: return
-    
-    # Build unique sorting key for private room identification
-    dm_channel_id = "-".join(sorted([me, target]))
-    join_room(dm_channel_id)
-    
-    if dm_channel_id not in PRIVATE_DMS:
-        PRIVATE_DMS[dm_channel_id] = []
-        
-    emit('sync_dm_history', PRIVATE_DMS[dm_channel_id])
-
-@socketio.on('send_private_dm')
-def handle_dm_distribution(data):
-    me = session.get('username')
-    target = data.get('target')
-    text = data.get('text')
-    if not me or not target or not text: return
-    
-    dm_channel_id = "-".join(sorted([me, target]))
-    message_packet = {
-        'text': text,
-        'sender': me,
-        'timestamp': datetime.now().strftime('%I:%M %p')
-    }
-    
-    if dm_channel_id not in PRIVATE_DMS:
-        PRIVATE_DMS[dm_channel_id] = []
-        
-    PRIVATE_DMS[dm_channel_id].append(message_packet)
-    emit('receive_private_dm', message_packet, to=dm_channel_id)
+    append_row(DB_CHATS, transmission)
+    return jsonify({"aero_status": "dispatched", "origin_app": app_source, "destination": target_channel}), 200
 
 if __name__ == '__main__':
-    assigned_port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=assigned_port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
