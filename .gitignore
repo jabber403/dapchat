@@ -1,0 +1,8 @@
+db_users.txt
+db_keys.txt
+db_chats.txt
+db_dms.txt
+db_stories.txt
+__pycache__/
+venv/
+.env
