@@ -3,67 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DapChat - Workspace</title>
+    <title>DapChat - Enterprise Workspace</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        /* --- CORE APPLICATION ARCHITECTURE DESIGN RESETS --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
         body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); overflow: hidden; }
-        .platform-container { width: 1100px; height: 780px; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.05); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); overflow: hidden; }
         
-        /* Stories Shelf Bar */
-        .stories-container { height: 110px; display: flex; align-items: center; padding: 0 20px; gap: 15px; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.05); overflow-x: auto; }
-        .story-container-node { display: flex; flex-direction: column; align-items: center; }
-        .story-node { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fffc00; padding: 2px; cursor: pointer; flex-shrink: 0; }
+        /* --- PREMIUM GLASSMORPHISM SYSTEM LAYER --- */
+        .platform-container { width: 1250px; height: 820px; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.04); border-radius: 24px; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6); overflow: hidden; animation: fadeInWorkspace 0.6s ease-out; }
+        
+        /* --- STORIES SHELF COMPONENT --- */
+        .stories-container { height: 115px; display: flex; align-items: center; padding: 0 24px; gap: 18px; background: rgba(0, 0, 0, 0.45); border-bottom: 1px solid rgba(255, 255, 255, 0.06); overflow-x: auto; scroll-behavior: smooth; }
+        .story-container-node { display: flex; flex-direction: column; align-items: center; transition: transform 0.2s; }
+        .story-container-node:hover { transform: scale(1.05); }
+        .story-node { width: 68px; height: 68px; border-radius: 50%; border: 3px solid #fffc00; padding: 2px; cursor: pointer; flex-shrink: 0; background: rgba(0,0,0,0.2); }
         .story-node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .story-label { font-size: 10px; color: white; margin-top: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 70px; text-align: center; }
-        .add-story-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; flex-shrink: 0; font-size: 1.5rem; }
+        .story-label { font-size: 11px; color: rgba(255, 255, 255, 0.8); margin-top: 5px; text-align: center; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .add-story-btn { width: 66px; height: 66px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); border: 2px dashed rgba(255, 255, 255, 0.4); display: flex; align-items: center; justify-content: center; color: #fffc00; font-weight: bold; cursor: pointer; flex-shrink: 0; font-size: 1.6rem; transition: background 0.2s; }
+        .add-story-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: #fffc00; }
         
+        /* --- WORKSPACE CORE WORKFLOW SPLIT GRID --- */
         .main-workspace { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 280px; background: rgba(0,0,0,0.3); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto; }
-        .sidebar-section { display: flex; flex-direction: column; gap: 8px; }
-        .sidebar h3 { color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-        .item-btn { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.02); color: white; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
-        .item-btn:hover, .item-btn.active { background: #fffc00; color: black; font-weight: 600; }
+        .sidebar { width: 290px; background: rgba(0, 0, 0, 0.35); border-right: 1px solid rgba(255, 255, 255, 0.06); display: flex; flex-direction: column; padding: 22px; gap: 24px; overflow-y: auto; }
+        .sidebar-section { display: flex; flex-direction: column; gap: 10px; }
+        .sidebar h3 { color: rgba(255, 255, 255, 0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+        .item-btn { padding: 12px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.02); color: rgba(255, 255, 255, 0.85); border: 1px solid rgba(255, 255, 255, 0.04); cursor: pointer; text-align: left; font-size: 0.92rem; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-btn:hover, .item-btn.active { background: #fffc00; color: #000; font-weight: 600; border-color: #fffc00; box-shadow: 0 4px 15px rgba(255, 252, 0, 0.2); }
         
-        .chat-engine { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { padding: 15px 25px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); color: white; font-weight: 600; }
-        .messages-area { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        /* --- TELEMETRY AND METRICS DRAWER --- */
+        .telemetry-box { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; margin-top: 10px; font-size: 0.75rem; color: #4cd964; font-family: monospace; }
+        .telemetry-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
         
-        .msg-wrap { display: flex; flex-direction: column; max-width: 50%; color: white; }
+        /* --- CHAT ENGINE MATRIX RENDERER --- */
+        .chat-engine { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(0,0,0,0.1); }
+        .chat-header { padding: 18px 28px; background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid rgba(255, 255, 255, 0.06); color: #fff; font-weight: 600; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
+        .call-controls { display: none; gap: 12px; }
+        .call-btn { padding: 8px 16px; border-radius: 22px; border: none; font-weight: 700; cursor: pointer; background: #4cd964; color: white; font-size: 0.85rem; transition: transform 0.2s, background-color 0.2s; display: flex; align-items: center; gap: 6px; }
+        .call-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        
+        /* --- DATA STREAM DISPLAY HOUSING --- */
+        .messages-area { flex: 1; padding: 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+        .msg-wrap { display: flex; flex-direction: column; max-width: 55%; color: white; animation: slideMsgIn 0.3s cubic-bezier(0.1, 0.8, 0.2, 1); }
         .msg-wrap.me { align-self: flex-end; }
         .msg-wrap.other { align-self: flex-start; }
-        .msg-author { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
-        .msg-bubble { padding: 11px 15px; border-radius: 16px; background: rgba(255, 255, 255, 0.1); font-size: 0.95rem; word-wrap: break-word; }
-        .msg-wrap.me .msg-bubble { background: #007aff; }
-        .msg-img { width: 100%; max-width: 240px; border-radius: 12px; margin-top: 5px; display: block; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
+        .msg-author { font-size: 0.78rem; color: rgba(255, 255, 255, 0.45); margin-bottom: 4px; font-weight: 600; letter-spacing: 0.5px; }
+        .msg-bubble { padding: 12px 18px; border-radius: 18px; background: rgba(255, 255, 255, 0.08); font-size: 0.96rem; line-height: 1.4; word-wrap: break-word; border: 1px solid rgba(255,255,255,0.03); }
+        .msg-wrap.me .msg-bubble { background: #007aff; border-color: rgba(255,255,255,0.1); }
+        .msg-img { width: 100%; max-width: 260px; border-radius: 14px; margin-top: 6px; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; transition: opacity 0.2s; }
+        .msg-img:hover { opacity: 0.9; }
         
-        .input-bar { padding: 20px; display: flex; gap: 12px; background: rgba(0,0,0,0.3); align-items: center; }
-        .input-bar input[type="text"] { flex: 1; padding: 14px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white; outline: none; }
-        .media-btn-label { width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; font-size: 1.2rem; }
-        .input-bar button { padding: 14px 24px; border-radius: 25px; border: none; background: #fffc00; color: black; font-weight: bold; cursor: pointer; }
-        .user-tag { margin-top: auto; color: #fffc00; font-size: 0.85rem; }
+        /* --- CAPTURE CONTROLS INPUT STRIP --- */
+        .input-bar { padding: 22px; display: flex; gap: 14px; background: rgba(0, 0, 0, 0.35); border-top: 1px solid rgba(255,255,255,0.06); align-items: center; }
+        .input-bar input[type="text"] { flex: 1; padding: 15px 24px; border-radius: 28px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.45); color: white; outline: none; font-size: 0.98rem; transition: border-color 0.2s; }
+        .input-bar input[type="text"]:focus { border-color: #fffc00; }
+        .media-btn-label { width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; font-size: 1.25rem; transition: background 0.2s; border: 1px solid rgba(255,255,255,0.05); }
+        .media-btn-label:hover { background: rgba(255, 255, 255, 0.15); }
+        .input-bar button { padding: 15px 30px; border-radius: 28px; border: none; background: #fffc00; color: black; font-weight: 700; cursor: pointer; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(255, 252, 0, 0.15); transition: background 0.2s; }
+        .input-bar button:hover { background: #e6e200; }
         
-        /* Fullscreen View Modal Overlay */
-        .story-overlay { display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
-        .story-overlay img { max-height: 80vh; max-width: 90vw; border-radius: 16px; box-shadow: 0 0 30px rgba(255,255,255,0.1); }
-        .story-overlay h2 { color: white; margin-bottom: 15px; font-weight: 400; }
+        /* --- WEBRTC LIVE STREAM HUD VIEWPORT --- */
+        .video-matrix-overlay { display: none; position: absolute; top: 75px; right: 24px; width: 310px; background: rgba(10, 15, 20, 0.94); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 18px; flex-direction: column; gap: 12px; z-index: 600; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        video { width: 100%; height: 180px; background: #0f172a; border-radius: 12px; object-fit: cover; transform: scaleX(-1); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* --- UTILITY CSS PORTALS --- */
+        .user-tag { margin-top: auto; color: #fffc00; font-size: 0.88rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 15px; }
+        .story-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.96); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
+        .story-overlay img { max-height: 82vh; max-width: 88vw; border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* --- ANIMATIONS FRAMEWORK --- */
+        @keyframes fadeInWorkspace { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideMsgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="story-overlay" id="story-viewer" onclick="this.style.display='none'">
-        <h2 id="story-viewer-author">@User</h2>
-        <img id="story-viewer-img" src="" alt="Snap Story">
-        <p style="color:gray; margin-top:10px;">Click anywhere to dismiss</p>
+        <h2 id="story-viewer-author" style="color: white; margin-bottom: 20px; font-weight: 500; letter-spacing: 0.5px;">@User Profile</h2>
+        <img id="story-viewer-img" src="" alt="DapChat Component Trace">
+        <p style="color: rgba(255,255,255,0.4); margin-top: 12px; font-size: 0.85rem;">Click outside background array to return</p>
     </div>
 
     <div class="platform-container">
+        
         <div class="stories-container">
             <label class="add-story-btn">
                 +
-                <input type="file" id="story-file-picker" accept="image/*" style="display:none;" onchange="postSnapStory(this)">
+                <input type="file" id="story-file-picker" accept="image/*" style="display:none;" onchange="executeStoryBroadcast(this)">
             </label>
             {% for story in stories %}
-                <div class="story-container-node" onclick="viewStory('{{ story.username }}', '{{ story.image }}')">
+                <div class="story-container-node" onclick="viewActiveStory('{{ story.username }}', '{{ story.image }}')">
                     <div class="story-node">
                         <img src="{{ story.image }}">
                     </div>
@@ -73,33 +101,66 @@
         </div>
 
         <div class="main-workspace">
+            
             <div class="sidebar">
                 <div class="sidebar-section">
-                    <h3>Channels</h3>
+                    <h3>Communication Rooms</h3>
                     {% for room_name, r_data in rooms.items() %}
-                        <button class="item-btn {% if room_name == 'General' %}active{% endif %}" onclick="switchGroup('{{ room_name }}')"># {{ room_name }}</button>
+                        <button class="item-btn {% if room_name == 'General' %}active{% endif %}" onclick="routeGroupChannel('{{ room_name }}')"># {{ room_name }}</button>
                     {% endfor %}
                 </div>
+                
                 <div class="sidebar-section">
-                    <h3>Direct Messages</h3>
+                    <h3>Secure Direct Links</h3>
                     {% for user in users_list %}
-                        <button class="item-btn" onclick="switchDM('{{ user }}')">💬 {{ user }}</button>
+                        <button class="item-btn" onclick="routeDirectMessage('{{ user }}')">⚡ {{ user }}</button>
                     {% endfor %}
                 </div>
-                <div class="user-tag">Logged in as:<br><strong>@{{ username }}</strong><br><br><a href="/logout" style="color:#ff6b6b; text-decoration:none;">[Disconnect]</a></div>
+                
+                <div class="sidebar-section" style="margin-top: 15px;">
+                    <h3>System Infrastructure</h3>
+                    <div class="telemetry-box" id="telemetry-readout">
+                        <div class="telemetry-row"><span>Status:</span><span style="color:#fffc00;">SYNCING...</span></div>
+                    </div>
+                </div>
+                
+                <div class="user-tag">
+                    Identity Core Assigned:<br>
+                    <span style="color: white; font-weight: 600; font-size: 1rem;">@{{ username }}</span>
+                    <br><br>
+                    <a href="/logout" style="color: #ff3b30; text-decoration: none; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.5px;">[TERMINATE ROUTING]</a>
+                </div>
             </div>
+
             <div class="chat-engine">
-                <div class="chat-header" id="current-chat-title">Group: # General</div>
+                <div class="chat-header">
+                    <span id="current-chat-title">Group: # General</span>
+                    <div class="call-controls" id="call-controls-shelf">
+                        <button class="call-btn" style="background: #4cd964;" onclick="triggerWebRtcSignalStream('voice')">📞 Voice Call</button>
+                        <button class="call-btn" style="background: #007aff;" onclick="triggerWebRtcSignalStream('video')">📹 Video Stream</button>
+                    </div>
+                </div>
+
+                <div class="video-matrix-overlay" id="video-stream-window">
+                    <div style="color: white; font-size: 0.78rem; text-transform: uppercase; font-family: monospace; opacity: 0.6; margin-bottom: 4px;">Remote Endpoint Feed</div>
+                    <video id="remote-video" autoplay playsinline></video>
+                    <div style="color: white; font-size: 0.78rem; text-transform: uppercase; font-family: monospace; opacity: 0.6; margin-top: 6px; margin-bottom: 4px;">Local Camera Matrix</div>
+                    <video id="local-video" autoplay playsinline muted style="height: 90px; border: 2px solid #fffc00;"></video>
+                    <button class="call-btn" style="background: #ff3b30; margin-top: 8px; justify-content: center;" onclick="disconnectActiveWebRtcLink()">Disconnect Pipeline</button>
+                </div>
+
                 <div class="messages-area" id="msg-container"></div>
+                
                 <div class="input-bar">
                     <label class="media-btn-label">
                         📷
-                        <input type="file" id="chat-file-picker" accept="image/*" style="display:none;">
+                        <input type="file" id="chat-file-picker" accept="image/*" style="display:none;" onchange="handleVisualStreamStage(this)">
                     </label>
-                    <input type="text" id="chat-input-field" placeholder="Type data stream..." autocomplete="off">
-                    <button id="dispatch-btn" onclick="sendMessage()">Send</button>
+                    <input type="text" id="chat-input-field" placeholder="Transmit telemetry down line..." autocomplete="off">
+                    <button id="dispatch-btn" onclick="dispatchMessagePayload()">Execute Send</button>
                 </div>
             </div>
+            
         </div>
     </div>
 
@@ -107,92 +168,240 @@
         const clientUser = "{{ username }}";
         let activeChatMode = "group";
         let activeTarget = "General";
+        let stagedBase64Image = "";
+
         const msgContainer = document.getElementById('msg-container');
         const inputField = document.getElementById('chat-input-field');
         const chatTitle = document.getElementById('current-chat-title');
         const chatFilePicker = document.getElementById('chat-file-picker');
+        const callShelf = document.getElementById('call-controls-shelf');
+        const videoWindow = document.getElementById('video-stream-window');
+        const telemetryBox = document.getElementById('telemetry-readout');
 
-        function switchGroup(name) { activeChatMode = "group"; activeTarget = name; chatTitle.innerText = "Group: # " + name; fetchMessages(); updateUI(); }
-        function switchDM(name) { activeChatMode = "dm"; activeTarget = name; chatTitle.innerText = "DM: @" + name; fetchMessages(); updateUI(); }
+        // --- WEBRTC COMPILER LAYER CONFIGURATIONS ---
+        let localStream = null;
+        let peerConnection = null;
+        const rtcCoreConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+
+        function routeGroupChannel(name) { 
+            activeChatMode = "group"; 
+            activeTarget = name; 
+            chatTitle.innerText = "Group: # " + name; 
+            callShelf.style.display = "none"; 
+            executeDataFetchLoop(); 
+            repaintInterfaceActiveNodes(); 
+        }
+
+        function routeDirectMessage(name) { 
+            activeChatMode = "dm"; 
+            activeTarget = name; 
+            chatTitle.innerText = "DM Secure: @" + name; 
+            callShelf.style.display = "flex"; 
+            executeDataFetchLoop(); 
+            repaintInterfaceActiveNodes(); 
+        }
         
-        function updateUI() {
-            document.querySelectorAll('.item-btn').forEach(b => {
-                if(activeChatMode === "group") b.classList.toggle('active', b.innerText.includes('# ' + activeTarget));
-                else b.classList.toggle('active', b.innerText.includes('💬 ' + activeTarget));
+        function repaintInterfaceActiveNodes() {
+            document.querySelectorAll('.item-btn').forEach(btn => {
+                if(activeChatMode === "group") {
+                    btn.classList.toggle('active', btn.innerText.includes('# ' + activeTarget));
+                } else {
+                    btn.classList.toggle('active', btn.innerText.includes('⚡ ' + activeTarget));
+                }
             });
         }
 
-        function renderMessages(list) {
+        function processUIMessageArray(list) {
             msgContainer.innerHTML = '';
-            list.forEach(m => {
-                const w = document.createElement('div');
-                w.classList.add('msg-wrap', m.sender === clientUser ? 'me' : 'other');
+            list.forEach(node => {
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('msg-wrap', node.sender === clientUser ? 'me' : 'other');
                 
-                let textBlock = m.text ? `<div class="msg-bubble">${m.text}</div>` : '';
-                let imgBlock = m.image ? `<img class="msg-img" src="${m.image}" onclick="window.open(this.src)">` : '';
+                let textLayer = node.text ? `<div class="msg-bubble">${node.text}</div>` : '';
+                let imageLayer = node.image ? `<img class="msg-img" src="${node.image}" onclick="window.open(this.src)">` : '';
                 
-                w.innerHTML = `<div class="msg-author">@${m.sender}</div>${textBlock}${imgBlock}`;
-                msgContainer.appendChild(w);
+                wrapper.innerHTML = `<div class="msg-author">@${node.sender}</div>${textLayer}${imageLayer}`;
+                msgContainer.appendChild(wrapper);
             });
             msgContainer.scrollTop = msgContainer.scrollHeight;
         }
 
-        function fetchMessages() {
-            let url = activeChatMode === "group" ? `/api/get_messages?room=${activeTarget}` : `/api/get_dms?target=${activeTarget}`;
-            fetch(url).then(r => r.json()).then(renderMessages);
+        function executeDataFetchLoop() {
+            let targetEndpoint = activeChatMode === "group" ? `/api/get_messages?room=${activeTarget}` : `/api/get_dms?target=${activeTarget}`;
+            fetch(targetEndpoint)
+                .then(response => response.json())
+                .then(processUIMessageArray)
+                .catch(err => console.warn("[Sync Warning] Stream payload dropout: ", err));
         }
 
-        function sendMessage() {
-            const txt = inputField.value.trim();
-            const file = chatFilePicker.files[0];
-            let url = activeChatMode === "group" ? '/api/send_message' : '/api/send_dm';
-            let payload = activeChatMode === "group" ? { room: activeTarget, text: txt, image: "" } : { target: activeTarget, text: txt, image: "" };
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    payload.image = reader.result;
-                    executeSendRequest(url, payload);
-                }
-                reader.readAsDataURL(file);
-            } else {
-                if(!txt) return;
-                executeSendRequest(url, payload);
+        function handleVisualStreamStage(input) {
+            const selectedFile = input.files[0];
+            if (!selectedFile) return;
+            const fileReader = new FileReader();
+            fileReader.onloadend = () => {
+                stagedBase64Image = fileReader.result;
+                document.getElementById('dispatch-btn').style.background = "#4cd964";
             }
+            fileReader.readAsDataURL(selectedFile);
         }
 
-        function executeSendRequest(url, body) {
-            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-            .then(() => { 
-                inputField.value = ''; 
-                chatFilePicker.value = ''; 
-                fetchMessages(); 
+        function dispatchMessagePayload() {
+            const rawText = inputField.value.trim();
+            let destinationUrl = activeChatMode === "group" ? '/api/send_message' : '/api/send_dm';
+            
+            let configurationBody = activeChatMode === "group" 
+                ? { room: activeTarget, text: rawText, image: stagedBase64Image } 
+                : { target: activeTarget, text: rawText, image: stagedBase64Image };
+            
+            if(!rawText && !stagedBase64Image) return;
+
+            fetch(destinationUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(configurationBody)
+            }).then(() => {
+                inputField.value = '';
+                chatFilePicker.value = '';
+                stagedBase64Image = "";
+                document.getElementById('dispatch-btn').style.background = "#fffc00";
+                executeDataFetchLoop();
             });
         }
 
-        function postSnapStory(inputElement) {
-            const file = inputElement.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onloadend = function() {
+        // --- PRODUCTION WEBRTC MEDIA SIGNALLING ROUTINE HOOKS ---
+        async function triggerWebRtcSignalStream(streamType) {
+            videoWindow.style.display = "flex";
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: streamType === 'video', 
+                    audio: true 
+                });
+                document.getElementById('local-video').srcObject = localStream;
+
+                peerConnection = new RTCPeerConnection(rtcCoreConfig);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = (streamEvent) => {
+                    document.getElementById('remote-video').srcObject = streamEvent.streams[0];
+                };
+
+                peerConnection.onicecandidate = (iceEvent) => {
+                    if (iceEvent.candidate) {
+                        forwardSignalingPacket({ type: 'candidate', packet: iceEvent.candidate, target: activeTarget });
+                    }
+                };
+
+                const streamingOffer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(streamingOffer);
+                forwardSignalingPacket({ type: 'offer', packet: streamingOffer, target: activeTarget });
+            } catch(mediaError) {
+                alert("Hardware initialization blocked. Verify media permissions profile.");
+                videoWindow.style.display = "none";
+            }
+        }
+
+        function forwardSignalingPacket(payload) {
+            fetch('/api/signal/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+
+        async function verifySignalingChannelQueues() {
+            try {
+                const response = await fetch('/api/signal/poll');
+                const signalPayload = await response.json();
+                if (!signalPayload.type) return;
+
+                if (signalPayload.type === 'offer') {
+                    if(confirm(`Inbound communications requested from @${signalPayload.from}. Sync video pipeline?`)) {
+                        videoWindow.style.display = "flex";
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        document.getElementById('local-video').srcObject = localStream;
+
+                        peerConnection = new RTCPeerConnection(rtcCoreConfig);
+                        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                        
+                        peerConnection.ontrack = (e) => {
+                            document.getElementById('remote-video').srcObject = e.streams[0];
+                        };
+                        
+                        peerConnection.onicecandidate = (e) => {
+                            if (e.candidate) forwardSignalingPacket({ type: 'candidate', packet: e.candidate, target: signalPayload.from });
+                        };
+
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(signalPayload.packet));
+                        const answerHandshake = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answerHandshake);
+                        forwardSignalingPacket({ type: 'answer', packet: answerHandshake, target: signalPayload.from });
+                    }
+                } else if (signalPayload.type === 'answer' && peerConnection) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(signalPayload.packet));
+                } else if (signalPayload.type === 'candidate' && peerConnection) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(signalPayload.packet));
+                }
+            } catch(pollError) {
+                console.error("[Signaling Engine] Core tracking failure: ", pollError);
+            }
+        }
+
+        function disconnectActiveWebRtcLink() {
+            if (peerConnection) peerConnection.close();
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            videoWindow.style.display = "none";
+            peerConnection = null;
+            console.log("[Signal Channel] Connection structural pipeline torn down gracefully.");
+        }
+
+        function executeStoryBroadcast(fileSelector) {
+            const targetBlob = fileSelector.files[0];
+            if (!targetBlob) return;
+            const fileReader = new FileReader();
+            fileReader.onloadend = () => {
                 fetch('/api/upload_story', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: reader.result })
-                }).then(() => { alert("Story Posted Successfully!"); window.location.reload(); });
+                    body: JSON.stringify({ image: fileReader.result })
+                }).then(() => { 
+                    alert("Ecosystem profile status synchronized!"); 
+                    window.location.reload(); 
+                });
             }
-            reader.readAsDataURL(file);
+            fileReader.readAsDataURL(targetBlob);
         }
 
-        function viewStory(author, base64Image) {
-            document.getElementById('story-viewer-author').innerText = "@" + author + "'s Story";
-            document.getElementById('story-viewer-img').src = base64Image;
+        function viewActiveStory(username, imageBytes) {
+            document.getElementById('story-viewer-author').innerText = "Timeline Node: @" + username;
+            document.getElementById('story-viewer-img').src = imageBytes;
             document.getElementById('story-viewer').style.display = "flex";
         }
 
-        inputField.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
-        setInterval(fetchMessages, 2000); 
-        fetchMessages();
+        function compileSystemTelemetry() {
+            fetch('/api/diagnostics')
+                .then(r => r.json())
+                .then(data => {
+                    telemetryBox.innerHTML = `
+                        <div class="telemetry-row"><span>Core Engine:</span><span style="color:#fffc00;">${data.engine_status}</span></div>
+                        <div class="telemetry-row"><span>Peers Online:</span><span>${data.active_user_registrations} Nodes</span></div>
+                        <div class="telemetry-row"><span>Total Traffic:</span><span>${data.total_messages_buffered} packets</span></div>
+                        <div class="telemetry-row"><span>WebRTC Routes:</span><span>${data.historical_call_connections} links</span></div>
+                    `;
+                }).catch(() => {
+                    telemetryBox.innerHTML = `<div style="color:#ff3b30;">[METRICS SYNC DISCONNECTED]</div>`;
+                });
+        }
+
+        // --- SYSTEM REGISTRATION EVENT INTERVAL LOOPS ---
+        inputField.addEventListener('keypress', (event) => { if(event.key === 'Enter') dispatchMessagePayload(); });
+        
+        setInterval(executeDataFetchLoop, 2000);
+        setInterval(verifySignalingChannelQueues, 3000);
+        setInterval(compileSystemTelemetry, 5000);
+        
+        // Initial Startup Invocation Run Trace
+        executeDataFetchLoop();
+        compileSystemTelemetry();
     </script>
 </body>
 </html>

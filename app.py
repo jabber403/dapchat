@@ -1,37 +1,52 @@
 import os
 import json
 import secrets
+import logging
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from datetime import datetime
 
+# -------------------------------------------------------------------------
+# INITIALIZATION & LOGGING CONFIGURATION
+# -------------------------------------------------------------------------
 app = Flask(__name__)
-# Secure secret key assignment for production serverless infrastructure
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dapchat_enterprise_crypto_key_2026')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dapchat_ultra_quantum_crypto_key_2026')
+
+# Initialize developer telemetry logs
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("DapChatCore")
 
 # -------------------------------------------------------------------------
-# ADVANCED SERVERLESS MEMORY STORAGE ENGINE & SCHEMAS
+# GLOBAL SERVERLESS DATA MEMORY MATRIX
 # -------------------------------------------------------------------------
-# Because Vercel destroys local storage text files on sleep, we use an
-# optimized global memory dictionary with lookup indexes for instant routing.
+# Vercel resets file configurations on sleep cycles. This optimized structure
+# utilizes lookups, state logs, and automated bot simulations.
 MEMORY_USERS = {
     "dapadmin": "admin123",
     "snapking": "snap123",
-    "cyberghost": "ghost123"
+    "cyberghost": "ghost123",
+    "pixelwarrior": "pixel456"
 }
 
 MEMORY_CHATS = [
     {
         "room": "General",
-        "text": "Welcome to the official launch of DapChat! 🚀",
+        "text": "Welcome to the premium serverless matrix of DapChat! 🚀",
         "image": "",
         "sender": "[Bot] System",
         "timestamp": "12:00 PM"
     },
     {
-        "room": "Code-Talk",
-        "text": "Flask engine optimized for Vercel Serverless Functions.",
+        "room": "General",
+        "text": "Voice and Video streams are fully operational. Click any user profile to call.",
         "image": "",
-        "sender": "[Bot] Developer",
+        "sender": "[Bot] Aero",
+        "timestamp": "12:01 PM"
+    },
+    {
+        "room": "Code-Talk",
+        "text": "Engine architecture updated: Python 3.10+ / Flask Micro-routing.",
+        "image": "",
+        "sender": "[Bot] Matrix",
         "timestamp": "12:05 PM"
     }
 ]
@@ -39,266 +54,343 @@ MEMORY_CHATS = [
 MEMORY_DMS = []
 MEMORY_STORIES = [
     {
-        "username": "snapking",
-        "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%23fffc00'/><text x='50%' y='55%' font-family='sans-serif' font-size='14' font-weight='bold' fill='black' text-anchor='middle'>LIVE NOW</text></svg>",
-        "timestamp": "01:00 PM"
+        "username": "cyberghost",
+        "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23007aff'/><text x='50%' y='55%' font-family='sans-serif' font-size='12' fill='white' text-anchor='middle'>ONLINE</text></svg>",
+        "timestamp": "11:30 AM"
     }
 ]
 
-# PERSISTENT STORAGE CAPABILITY FALLBACK FOR LOCAL MACHINES
+# WebRTC Signaling routing arrays
+ACTIVE_SIGNALS = {}
+CALL_HISTORY_LOGS = []
+
 DB_USERS = "db_users.txt"
 
-def seed_database_from_local_disk():
-    """ Scans local environments for existing user schemas to preserve state """
-    global MEMORY_USERS
-    try:
-        if os.path.exists(DB_USERS):
-            with open(DB_USERS, "r") as storage_file:
-                for active_line in storage_file:
-                    if active_line.strip():
-                        parsed_record = json.loads(active_line.strip())
-                        MEMORY_USERS[parsed_record['username']] = parsed_record['password']
-    except Exception as cache_error:
-        print(f"[Engine Warn] Disk synchronization bypassed: {cache_error}")
-
-# Run sync check on startup
-seed_database_from_local_disk()
-
 # -------------------------------------------------------------------------
-# MEMORY MONITORING & PURGE GARBAGE COLLECTION
+# SECURITY ENGINE & TEXT SANITIZATION
 # -------------------------------------------------------------------------
-def optimize_memory_buffers():
-    """ 
-    Prevents serverless instance memory bloat from active Base64 image streams.
-    Caps public channels and direct messaging histories at a strict length threshold.
+def sanitize_user_input(dirty_string):
     """
-    global MEMORY_CHATS, MEMORY_DMS, MEMORY_STORIES
-    MAX_BUFFER_CAPACITY = 100
+    Prevents Cross-Site Scripting (XSS) attacks by removing hazardous HTML tags
+    before rendering input into client browser templates.
+    """
+    if not dirty_string:
+        return ""
+    clean_string = dirty_string.replace("<", "&lt;").replace(">", "&gt;")
+    clean_string = clean_string.replace("script", "[blocked]")
+    return clean_string.strip()
+
+# -------------------------------------------------------------------------
+# MEMORY RETENTION & GARBAGE COLLECTION MANAGER
+# -------------------------------------------------------------------------
+def run_garbage_collection_sweep():
+    """
+    Prevents serverless functions from exceeding strict internal RAM thresholds
+    by purging old chat history indexes and caching payloads safely.
+    """
+    global MEMORY_CHATS, MEMORY_DMS, MEMORY_STORIES, CALL_HISTORY_LOGS
+    CAPACITY_CEILING = 150
     
-    if len(MEMORY_CHATS) > MAX_BUFFER_CAPACITY:
-        MEMORY_CHATS = MEMORY_CHATS[-MAX_BUFFER_CAPACITY:]
-    if len(MEMORY_DMS) > MAX_BUFFER_CAPACITY:
-        MEMORY_DMS = MEMORY_DMS[-MAX_BUFFER_CAPACITY:]
-    if len(MEMORY_STORIES) > 20:
-        MEMORY_STORIES = MEMORY_STORIES[-20:]
+    try:
+        if len(MEMORY_CHATS) > CAPACITY_CEILING:
+            MEMORY_CHATS = MEMORY_CHATS[-CAPACITY_CEILING:]
+            logger.info("[GC] Global public channels memory buffer truncated.")
+            
+        if len(MEMORY_DMS) > CAPACITY_CEILING:
+            MEMORY_DMS = MEMORY_DMS[-CAPACITY_CEILING:]
+            logger.info("[GC] Secure private messaging logs truncated.")
+            
+        if len(MEMORY_STORIES) > 25:
+            MEMORY_STORIES = MEMORY_STORIES[-25:]
+            
+        if len(CALL_HISTORY_LOGS) > 50:
+            CALL_HISTORY_LOGS = CALL_HISTORY_LOGS[-50:]
+    except Exception as ec:
+        logger.error(f"[GC Error] Automated memory purge failure: {ec}")
 
 # -------------------------------------------------------------------------
-# CORE APPLICATION ROUTING & CORE PAGES
+# AUTHENTICATION FRAMEWORK & ROUTING ARCHITECTURE
 # -------------------------------------------------------------------------
-
 @app.route('/')
 def index():
-    """ Renders the primary workspace dashboard panel """
+    """ Renders the active application frame controller workspace """
     if 'username' not in session:
         return redirect(url_for('login'))
     
     current_identity = session['username']
     
-    # Filter out system entities and the requesting user from the direct message sidebar
-    active_directory = [
-        user_handle for user_handle in MEMORY_USERS.keys() 
-        if user_handle != current_identity and not user_handle.startswith('[Bot]')
+    # Filter directories to hide self identity and running system bots
+    user_directory = [
+        profile_handle for profile_handle in MEMORY_USERS.keys()
+        if profile_handle != current_identity and not profile_handle.startswith('[Bot]')
     ]
     
-    preconfigured_rooms = {
-        "General": {"is_private": False},
-        "Gaming": {"is_private": False},
-        "Code-Talk": {"is_private": False}
+    available_rooms = {
+        "General": {"desc": "Main Hub Communication Array"},
+        "Gaming": {"desc": "Multimedia Lounge Grid"},
+        "Code-Talk": {"desc": "Systems Development Frameworks"}
     }
     
     return render_template(
-        'index.html', 
-        username=current_identity, 
-        rooms=preconfigured_rooms,
-        users_list=active_directory,
-        stories=MEMORY_STORIES[-10:]
+        'index.html',
+        username=current_identity,
+        rooms=available_rooms,
+        users_list=user_directory,
+        stories=MEMORY_STORIES[-12:]
     )
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """ Manages user session authentication lookups """
+    """ Validates login credentials and initialises token session contexts """
     if request.method == 'POST':
         user_handle = request.form.get('username', '').strip()
         security_token = request.form.get('password', '')
         
         if not user_handle or not security_token:
-            return "<h3>Missing credentials. <a href='/login'>Retry</a></h3>", 400
+            return "<h3>Credential verification packets missing fields. <a href='/login'>Retry</a></h3>", 400
             
         if user_handle in MEMORY_USERS and MEMORY_USERS[user_handle] == security_token:
             session['username'] = user_handle
+            logger.info(f"[Auth] User @{user_handle} verified security key matches.")
             return redirect(url_for('index'))
             
-        return "<h3>Invalid identity configurations. <a href='/login'>Retry</a></h3>", 401
+        return "<h3>Authentication mismatch signature. <a href='/login'>Retry</a></h3>", 401
         
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    """ Registers new credentials inside the memory matrix """
+    """ Registers new credentials inside the memory matrix schemas """
     if request.method == 'POST':
         user_handle = request.form.get('username', '').strip()
         security_token = request.form.get('password', '')
         
-        # Rigorous input validation checks
         if not user_handle or not security_token:
-            return "<h3>All fields are mandatory. <a href='/signup'>Back</a></h3>", 400
+            return "<h3>All configuration fields must be provided. <a href='/signup'>Back</a></h3>", 400
             
         if len(user_handle) < 3 or len(security_token) < 4:
-            return "<h3>Credentials fail length regulations. <a href='/signup'>Back</a></h3>", 400
+            return "<h3>Input does not comply with structural guidelines. <a href='/signup'>Back</a></h3>", 400
             
         if user_handle.startswith('[Bot]') or user_handle.lower() == 'system':
-            return "<h3>Reserved handle naming pattern. <a href='/signup'>Back</a></h3>", 403
+            return "<h3>Reserved identification prefix detected. <a href='/signup'>Back</a></h3>", 403
             
         if user_handle in MEMORY_USERS:
-            return "<h3>Identity token already allocated. <a href='/signup'>Back</a></h3>", 409
+            return "<h3>Identity footprint already verified in active map. <a href='/signup'>Back</a></h3>", 409
             
-        # Commit to real-time memory map
+        # Write directly to allocation data grid
         MEMORY_USERS[user_handle] = security_token
         
-        # Local system safety write fallback
+        # Local system safety write logging fallback
         try:
-            with open(DB_USERS, "a") as storage_append:
-                storage_append.write(json.dumps({"username": user_handle, "password": security_token}) + "\n")
+            with open(DB_USERS, "a") as disk_append:
+                disk_append.write(json.dumps({"username": user_handle, "password": security_token}) + "\n")
         except Exception:
             pass
             
         session['username'] = user_handle
+        logger.info(f"[System] Minted new user profile signature for @{user_handle}")
         return redirect(url_for('index'))
         
     return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
-    """ Destroys client browser cookie sessions """
+    """ Clears secure authentication browser session structures """
+    user_handle = session.get('username', 'Unknown')
     session.pop('username', None)
+    logger.info(f"[Auth] User @{user_handle} terminated session routing successfully.")
     return redirect(url_for('login'))
 
 # -------------------------------------------------------------------------
-# ASYNC PUBLIC CHANNEL MEDIA API WIRES
+# CORE CHAT COMMUNICATIONS & FILE TRANSMISSION ENDPOINTS
 # -------------------------------------------------------------------------
-
 @app.route('/api/get_messages', methods=['GET'])
 def get_messages():
-    """ Queries the network message stack for a specified room location """
-    target_room = request.args.get('room')
-    if not target_room:
-        return jsonify({"error": "Missing parameter 'room'"}), 400
+    """ Queries active chat buffers matching explicit room locations """
+    target_channel = request.args.get('room')
+    if not target_channel:
+        return jsonify({"error": "Null parameter 'room'"}), 400
         
-    isolated_history = [
-        chat_packet for chat_packet in MEMORY_CHATS 
-        if chat_packet.get('room') == target_room
+    channel_history = [
+        packet for packet in MEMORY_CHATS
+        if packet.get('room') == target_channel
     ]
-    return jsonify(isolated_history[-35:])
+    return jsonify(channel_history[-40:])
 
 @app.route('/api/send_message', methods=['POST'])
 def send_message():
-    """ Appends an encoded public message packet into the cloud buffer """
-    active_sender = session.get('username')
-    if not active_sender:
-        return jsonify({"error": "Session unauthenticated"}), 401
+    """ Appends verified structural messages to active public streams """
+    active_identity = session.get('username')
+    if not active_identity:
+        return jsonify({"error": "Session verification denied"}), 401
         
-    payload_data = request.get_json() or {}
-    target_room = payload_data.get('room')
-    message_text = payload_data.get('text', '')
-    media_packet = payload_data.get('image', '')
+    packet_payload = request.get_json() or {}
+    target_channel = packet_payload.get('room')
+    message_content = sanitize_user_input(packet_payload.get('text', ''))
+    base64_media_stream = packet_payload.get('image', '')
     
-    if not target_room or (not message_text and not media_packet):
-        return jsonify({"error": "Empty or malformed transmission structural data"}), 400
+    if not target_channel or (not message_content and not base64_media_stream):
+        return jsonify({"error": "Packet dropped: Structure data malformed"}), 400
         
     compiled_chat_node = {
-        'room': target_room,
-        'text': message_text,
-        'image': media_packet,
-        'sender': active_sender,
+        'room': target_channel,
+        'text': message_content,
+        'image': base64_media_stream,
+        'sender': active_identity,
         'timestamp': datetime.now().strftime('%I:%M %p')
     }
     
     MEMORY_CHATS.append(compiled_chat_node)
-    optimize_memory_buffers()
-    return jsonify({"status": "success", "scope": "channel"})
-
-# -------------------------------------------------------------------------
-# ASYNC DIRECT MESSAGING & STORIES ENGINE CORNERSTONES
-# -------------------------------------------------------------------------
+    run_garbage_collection_sweep()
+    return jsonify({"status": "success", "scope": "public_channel_dispatch"})
 
 @app.route('/api/get_dms', methods=['GET'])
 def get_dms():
-    """ Fetches secure private communication channels for matching users """
-    authenticated_identity = session.get('username')
+    """ Queries encrypted-style direct communications between paired endpoints """
+    requesting_identity = session.get('username')
     target_recipient = request.args.get('target')
     
-    if not authenticated_identity or not target_recipient:
-        return jsonify({"error": "Invalid channel parameters query context"}), 400
+    if not requesting_identity or not target_recipient:
+        return jsonify({"error": "Incomplete query trace properties"}), 400
         
-    # Generate bi-directional channel string hash sorting keys alphabetical
-    shared_dm_hash_key = "-".join(sorted([authenticated_identity, target_recipient]))
-    
-    isolated_dm_history = [
-        dm_packet for dm_packet in MEMORY_DMS 
-        if dm_packet.get('dm_id') == shared_dm_hash_key
+    bi_directional_hash = "-".join(sorted([requesting_identity, target_recipient]))
+    private_history = [
+        dm_node for dm_node in MEMORY_DMS
+        if dm_node.get('dm_id') == bi_directional_hash
     ]
-    return jsonify(isolated_dm_history[-35:])
+    return jsonify(private_history[-40:])
 
 @app.route('/api/send_dm', methods=['POST'])
 def send_dm():
-    """ Locks a private communication log node into memory """
-    authenticated_identity = session.get('username')
-    if not authenticated_identity:
-        return jsonify({"error": "Session unauthenticated"}), 401
+    """ Locks a confidential private data node into cloud instance indexing """
+    requesting_identity = session.get('username')
+    if not requesting_identity:
+        return jsonify({"error": "Session verification denied"}), 401
         
-    payload_data = request.get_json() or {}
-    target_recipient = payload_data.get('target')
-    message_text = payload_data.get('text', '')
-    media_packet = payload_data.get('image', '')
+    packet_payload = request.get_json() or {}
+    target_recipient = packet_payload.get('target')
+    message_content = sanitize_user_input(packet_payload.get('text', ''))
+    base64_media_stream = packet_payload.get('image', '')
     
-    if not target_recipient or (not message_text and not media_packet):
-        return jsonify({"error": "Malformed network package specifications"}), 400
+    if not target_recipient or (not message_content and not base64_media_stream):
+        return jsonify({"error": "Packet dropped: Incomplete parameters structural setup"}), 400
         
-    shared_dm_hash_key = "-".join(sorted([authenticated_identity, target_recipient]))
+    bi_directional_hash = "-".join(sorted([requesting_identity, target_recipient]))
     
     compiled_dm_node = {
-        'dm_id': shared_dm_hash_key,
-        'text': message_text,
-        'image': media_packet,
-        'sender': authenticated_identity,
+        'dm_id': bi_directional_hash,
+        'text': message_content,
+        'image': base64_media_stream,
+        'sender': requesting_identity,
         'timestamp': datetime.now().strftime('%I:%M %p')
     }
     
     MEMORY_DMS.append(compiled_dm_node)
-    optimize_memory_buffers()
-    return jsonify({"status": "success", "scope": "direct_message"})
+    run_garbage_collection_sweep()
+    return jsonify({"status": "success", "scope": "direct_message_dispatch"})
 
+# -------------------------------------------------------------------------
+# STORIES & SNAP RECORDING API
+# -------------------------------------------------------------------------
 @app.route('/api/upload_story', methods=['POST'])
 def upload_story():
-    """ Provisions a Base64 image string as a global snap status node """
-    authenticated_identity = session.get('username')
-    if not authenticated_identity:
-        return jsonify({"error": "Session unauthenticated"}), 401
+    """ Broadcasts an image byte-array status profile node globally """
+    requesting_identity = session.get('username')
+    if not requesting_identity:
+        return jsonify({"error": "Session verification denied"}), 401
         
-    payload_data = request.get_json() or {}
-    base64_image_data = payload_data.get('image')
+    packet_payload = request.get_json() or {}
+    base64_media_stream = packet_payload.get('image')
     
-    if not base64_image_data:
-        return jsonify({"error": "Empty visual array byte matrix allocation"}), 400
+    if not base64_media_stream:
+        return jsonify({"error": "Packet dropped: Content payload empty"}), 400
         
     compiled_story_node = {
-        'username': authenticated_identity,
-        'image': base64_image_data,
+        'username': requesting_identity,
+        'image': base64_media_stream,
         'timestamp': datetime.now().strftime('%I:%M %p')
     }
     
     MEMORY_STORIES.append(compiled_story_node)
-    optimize_memory_buffers()
-    return jsonify({"status": "success", "scope": "stories_portal"})
+    run_garbage_collection_sweep()
+    return jsonify({"status": "success", "scope": "stories_broadcast"})
 
 # -------------------------------------------------------------------------
-# SERVER CONTEXT INITIALIZATION RUNNERS
+# ADVANCED WEBRTC CALLING & SIGNALING ROUTING ENGINE
+# -------------------------------------------------------------------------
+@app.route('/api/signal/post', methods=['POST'])
+def post_signal():
+    """ Buffers ICE candidate data streams and WebRTC connection configurations """
+    requesting_identity = session.get('username')
+    if not requesting_identity:
+        return jsonify({"error": "Session verification denied"}), 401
+        
+    packet_payload = request.get_json() or {}
+    target_recipient = packet_payload.get('target')
+    signal_data = packet_payload.get('packet')
+    transmission_type = packet_payload.get('type') # 'offer' / 'answer' / 'candidate'
+    
+    if not target_recipient or not transmission_type:
+        return jsonify({"error": "Malformed network stream parameters"}), 400
+        
+    # Queue connection node to signaling matrix stack
+    ACTIVE_SIGNALS[target_recipient] = {
+        "from": requesting_identity,
+        "packet": signal_data,
+        "type": transmission_type,
+        "timestamp": datetime.now().strftime('%I:%M:%S %p')
+    }
+    
+    if transmission_type in ['offer', 'answer']:
+        CALL_HISTORY_LOGS.append({
+            "caller": requesting_identity,
+            "receiver": target_recipient,
+            "type": transmission_type,
+            "time": datetime.now().strftime('%I:%M %p')
+        })
+        
+    return jsonify({"status": "buffered", "routing_target": target_recipient})
+
+@app.route('/api/signal/poll', methods=['GET'])
+def poll_signal():
+    """ Checks for real-time video/voice signaling packets waiting in line """
+    requesting_identity = session.get('username')
+    if not requesting_identity:
+        return jsonify({"error": "Session verification denied"}), 401
+        
+    # Extract waiting signal data packet
+    waiting_packet = ACTIVE_SIGNALS.pop(requesting_identity, {})
+    return jsonify(waiting_packet)
+
+# -------------------------------------------------------------------------
+# REAL-TIME SYSTEM DIAGNOSTICS & TELEMETRY
+# -------------------------------------------------------------------------
+@app.route('/api/diagnostics', methods=['GET'])
+def get_diagnostics():
+    """ Telemetry monitoring dashboard data readout link """
+    if 'username' not in session:
+        return jsonify({"error": "Unauthorized endpoint trace request"}), 403
+        
+    diagnostic_report = {
+        "engine_status": "ONLINE",
+        "framework_preset": "Flask Serverless Architecture",
+        "active_user_registrations": len(MEMORY_USERS),
+        "total_messages_buffered": len(MEMORY_CHATS) + len(MEMORY_DMS),
+        "stories_broadcasted_count": len(MEMORY_STORIES),
+        "unrouted_signals_in_queue": len(ACTIVE_SIGNALS),
+        "historical_call_connections": len(CALL_HISTORY_LOGS),
+        "server_local_timestamp": datetime.now().isoformat()
+    }
+    return jsonify(diagnostic_report)
+
+# -------------------------------------------------------------------------
+# PROCESS BOOTSTRAP EXECUTOR LOOP
 # -------------------------------------------------------------------------
 if __name__ == '__main__':
-    # Local diagnostic feedback log execution loop flags
-    print("\n========================================================")
-    print("      DAPCHAT CORE SERVICE NETWORK ENGINE STANDALONE    ")
-    print("========================================================")
-    print(" >>> Mode: High-Performance Network Polling Protocol Active")
-    print(" >>> Address Allocation Target: http://127.0.0.1:5000\n")
+    print("\n==================================================================")
+    print("        DAPCHAT ECOSYSTEM FRAMEWORK - SERVERLESS PRESET RUNNER     ")
+    print("==================================================================")
+    print(" >>> Deployment Infrastructure: Optimized for Vercel Cloud Nodes")
+    print(" >>> Engine Status: Production Stack Active [RAM Guard Enabled]")
+    print(" >>> Core Pipeline Routing Port Allocation Target: 127.0.0.1:5000\n")
     app.run(host="127.0.0.1", port=5000, debug=True)
